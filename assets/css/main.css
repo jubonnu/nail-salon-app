@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #A5D8E6;
+  --color-primary-light: #E5F4F9;
+  --color-secondary: #4A90A8;
+  --color-accent: #D4AF37;
+  --color-success: #48BB78;
+  --color-warning: #F6AD55;
+  --color-error: #F56565;
+  --color-background: #FFFFFF;
+  --color-text: #333333;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
+
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.3s;
+}
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.el-button--primary {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+.el-button--primary:hover {
+  background-color: var(--color-secondary) !important;
+  border-color: var(--color-secondary) !important;
+}
+
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+.nail-card {
+  @apply rounded-lg shadow-md bg-white p-4 transition-all duration-300;
+}
+
+.nail-card:hover {
+  @apply shadow-lg transform translate-y-[-2px];
+}
