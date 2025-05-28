@@ -32,71 +32,71 @@
         <aside
           class="bg-secondary text-white fixed left-0 top-14 bottom-0 overflow-y-auto z-10 transition-all duration-300"
           :class="{
-            'w-64': !isSidebarCollapsed,
-            'w-20': isSidebarCollapsed,
+            'w-64': !sidebarCollapsed, 
+            'w-20': sidebarCollapsed,
             '-translate-x-full md:translate-x-0': isMobileSidebarHidden
           }"
         >
-          <nav class="p-4">
-            <el-button
-              class="mb-4 w-full flex justify-center"
-              @click="toggleSidebar"
-              text
-            >
-              <div class="w-6 h-6 flex flex-col justify-center gap-1.5">
-                <div class="w-full h-0.5 bg-white rounded-full"></div>
-                <div class="w-full h-0.5 bg-white rounded-full"></div>
-                <div class="w-full h-0.5 bg-white rounded-full"></div>
-              </div>
-            </el-button>
+          <nav class="p-4 relative">
+            <div class="mb-4">
+              <button
+                class="bg-secondary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-secondary-dark transition-colors duration-150 float-right"
+                @click="toggleSidebar"
+                type="button"
+              >
+                <el-icon :class="{ 'transform rotate-180': sidebarCollapsed }">
+                  <ArrowLeft />
+                </el-icon>
+              </button>
+            </div>
 
             <div class="mb-8">
-              <p class="text-xs uppercase text-gray-400 mb-2" :class="{ 'text-center': isSidebarCollapsed }">
+              <p class="text-xs uppercase text-gray-400 mb-2 clear-both" :class="{ 'text-center': sidebarCollapsed, 'opacity-0': sidebarCollapsed }">
                 メイン
               </p>
-              <NuxtLink to="/admin/dashboard" class="sidebar-link">
+              <NuxtLink to="/admin/dashboard" class="sidebar-link" :class="{ 'justify-center': sidebarCollapsed }">
                 <el-icon class="icon"><DataLine /></el-icon>
-                <span>ダッシュボード</span>
+                <span :class="{ 'hidden': sidebarCollapsed }">ダッシュボード</span>
               </NuxtLink>
-              <NuxtLink to="/admin/customers" class="sidebar-link">
+              <NuxtLink to="/admin/customers" class="sidebar-link" :class="{ 'justify-center': sidebarCollapsed }">
                 <el-icon class="icon"><User /></el-icon>
-                <span>顧客管理</span>
+                <span :class="{ 'hidden': sidebarCollapsed }">顧客管理</span>
               </NuxtLink>
-              <NuxtLink to="/admin/counseling" class="sidebar-link">
+              <NuxtLink to="/admin/counseling" class="sidebar-link" :class="{ 'justify-center': sidebarCollapsed }">
                 <el-icon class="icon"><Document /></el-icon>
-                <span>カウンセリングシート</span>
+                <span :class="{ 'hidden': sidebarCollapsed }">カウンセリングシート</span>
               </NuxtLink>
             </div>
             
             <div class="mb-8">
-              <p class="text-xs uppercase text-gray-400 mb-2">
+              <p class="text-xs uppercase text-gray-400 mb-2" :class="{ 'text-center': sidebarCollapsed, 'opacity-0': sidebarCollapsed }">
                 ビジネス
               </p>
-              <NuxtLink to="/admin/sales" class="sidebar-link">
+              <NuxtLink to="/admin/sales" class="sidebar-link" :class="{ 'justify-center': sidebarCollapsed }">
                 <el-icon class="icon"><Money /></el-icon>
-                <span>売上・レポート</span>
+                <span :class="{ 'hidden': sidebarCollapsed }">売上・レポート</span>
               </NuxtLink>
-              <NuxtLink to="/admin/instagram" class="sidebar-link">
+              <NuxtLink to="/admin/instagram" class="sidebar-link" :class="{ 'justify-center': sidebarCollapsed }">
                 <el-icon class="icon"><Picture /></el-icon>
-                <span>Instagram投稿</span>
+                <span :class="{ 'hidden': sidebarCollapsed }">Instagram投稿</span>
               </NuxtLink>
             </div>
             
             <div class="mb-8">
-              <p class="text-xs uppercase text-gray-400 mb-2">
+              <p class="text-xs uppercase text-gray-400 mb-2" :class="{ 'text-center': sidebarCollapsed, 'opacity-0': sidebarCollapsed }">
                 オプション
               </p>
-              <NuxtLink to="/admin/reservations" class="sidebar-link">
+              <NuxtLink to="/admin/reservations" class="sidebar-link" :class="{ 'justify-center': sidebarCollapsed }">
                 <el-icon class="icon"><Calendar /></el-icon>
-                <span>予約管理</span>
+                <span :class="{ 'hidden': sidebarCollapsed }">予約管理</span>
               </NuxtLink>
-              <NuxtLink to="/admin/staff" class="sidebar-link">
+              <NuxtLink to="/admin/staff" class="sidebar-link" :class="{ 'justify-center': sidebarCollapsed }">
                 <el-icon class="icon"><UserFilled /></el-icon>
-                <span>スタッフ管理</span>
+                <span :class="{ 'hidden': sidebarCollapsed }">スタッフ管理</span>
               </NuxtLink>
-              <NuxtLink to="/admin/inventory" class="sidebar-link">
+              <NuxtLink to="/admin/inventory" class="sidebar-link" :class="{ 'justify-center': sidebarCollapsed }">
                 <el-icon class="icon"><Box /></el-icon>
-                <span>在庫管理</span>
+                <span :class="{ 'hidden': sidebarCollapsed }">在庫管理</span>
               </NuxtLink>
             </div>
           </nav>
@@ -134,6 +134,7 @@
         <!-- メインコンテンツ -->
         <main
           class="w-full pb-16 md:pb-0 px-4 transition-all duration-300 md:ml-64"
+          :class="{ 'md:ml-20': sidebarCollapsed }"
           v-if="!isCustomerMode"
         >
           <slot />
@@ -152,6 +153,7 @@
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import {
+  ArrowLeft,
   Menu,
   DataLine,
   User,
@@ -172,9 +174,14 @@ const isCustomerMode = computed(() => {
 
 // サイドバーの状態管理
 const isMobileSidebarHidden = ref(true);
+const sidebarCollapsed = ref(false);
 
 const toggleMobileSidebar = () => {
   isMobileSidebarHidden.value = !isMobileSidebarHidden.value;
+};
+
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value;
 };
 </script>
 
@@ -184,7 +191,11 @@ const toggleMobileSidebar = () => {
 }
 
 .sidebar-link .icon {
-  @apply mr-3 flex-shrink-0 text-xl;
+  @apply flex-shrink-0 text-xl;
+}
+
+.sidebar-link:not(.justify-center) .icon {
+  @apply mr-3;
 }
 
 .sidebar-link.router-link-active {
@@ -204,7 +215,7 @@ const toggleMobileSidebar = () => {
 }
 
 .icon {
-  @apply mr-3 flex-shrink-0 text-xl;
+  @apply flex-shrink-0 text-xl;
 }
 
 .shadow-up {
