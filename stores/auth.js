@@ -20,8 +20,6 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       
       try {
-        // This would be an actual API call in a real implementation
-        // Simulate API call for demo
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         return true;
@@ -38,16 +36,6 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       
       try {
-        // This would be an actual API call in a real implementation
-        // const response = await fetch(`${apiBaseUrl}/auth/login`, {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //   },
-        //   body: JSON.stringify({ email, password }),
-        // });
-        
-        // Simulate API call for demo
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Simulate successful login
@@ -60,6 +48,7 @@ export const useAuthStore = defineStore('auth', {
           };
           this.token = 'fake-jwt-token';
           localStorage.setItem('token', this.token);
+          localStorage.setItem('rememberMe', this.rememberMe);
           return true;
         } else {
           throw new Error('Invalid credentials');

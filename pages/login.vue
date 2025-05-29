@@ -74,6 +74,11 @@ import { ref, reactive } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { useRouter } from 'vue-router';
 
+definePageMeta({
+  layout: 'auth',
+  middleware: ['guest']
+});
+
 const router = useRouter();
 const authStore = useAuthStore();
 const formRef = ref(null);
@@ -103,22 +108,16 @@ const handleLogin = async () => {
     await formRef.value.validate();
     loading.value = true;
     
+    authStore.rememberMe = rememberMe.value;
     const success = await authStore.login(form.email, form.password);
     if (success) {
+      ElMessage.success('ログインしました');
       router.push('/admin/dashboard');
     }
   } catch (error) {
     ElMessage.error('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
   } finally {
     loading.value = false;
-  }
-};
-
-// Redirect if already logged in
-if (process.client) {
-  const auth = useAuthStore();
-  if (auth.isAuthenticated) {
-    router.push('/admin/dashboard');
   }
 }
 </script>
