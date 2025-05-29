@@ -1,10 +1,16 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   // Skip auth check for auth-related routes
-  if (to.path === '/login' || to.path === '/register' || to.path === '/forgot-password') {
+  const publicRoutes = ['/login', '/register', '/forgot-password'];
+  if (publicRoutes.includes(to.path)) {
     return;
   }
   
   const authStore = useAuthStore();
+  
+  // Handle root path redirect
+  if (to.path === '/') {
+    return navigateTo(authStore.isAuthenticated ? '/admin/dashboard' : '/login');
+  }
   
   // Check if user is authenticated
   if (!authStore.isAuthenticated) {

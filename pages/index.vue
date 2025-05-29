@@ -1,16 +1,14 @@
-<template>
-  <NuxtPage />
-</template>
-
 <script setup>
-const router = useRouter();
-const authStore = useAuthStore();
-
-onBeforeMount(() => {
-  if (!authStore.isAuthenticated) {
-    router.push('/login');
-  } else {
-    router.push('/admin/dashboard');
-  }
+// Redirect handling is now done in middleware
+definePageMeta({
+  middleware: ['auth']
 });
 </script>
+
+<template>
+  <div>
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+  </div>
+</template>
