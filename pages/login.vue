@@ -73,11 +73,7 @@
 import { ref, reactive } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 
-definePageMeta({
-  layout: 'auth',
-  middleware: ['guest']
-});
-
+const route = useRoute();
 const router = useRouter()
 const authStore = useAuthStore();
 const formRef = ref(null);
