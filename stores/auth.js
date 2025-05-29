@@ -5,7 +5,8 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     token: null,
     loading: false,
-    error: null
+    error: null,
+    rememberMe: false
   }),
   
   getters: {
@@ -14,6 +15,24 @@ export const useAuthStore = defineStore('auth', {
   },
   
   actions: {
+    async register(email, password) {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        // This would be an actual API call in a real implementation
+        // Simulate API call for demo
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        return true;
+      } catch (error) {
+        this.error = error.message || 'Registration failed';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+    
     async login(email, password) {
       this.loading = true;
       this.error = null;
@@ -56,12 +75,19 @@ export const useAuthStore = defineStore('auth', {
     logout() {
       this.user = null;
       this.token = null;
+      this.rememberMe = false;
       localStorage.removeItem('token');
+      localStorage.removeItem('rememberMe');
     },
     
     async checkAuth() {
       const token = localStorage.getItem('token');
-      if (!token) return false;
+      const rememberMe = localStorage.getItem('rememberMe') === 'true';
+      
+      if (!token || !rememberMe) {
+        this.logout();
+        return false;
+      }
       
       this.loading = true;
       
@@ -69,6 +95,7 @@ export const useAuthStore = defineStore('auth', {
         // This would validate token with backend in real implementation
         // For demo, we'll just set it
         this.token = token;
+        this.rememberMe = rememberMe;
         
         // Simulate fetching user data
         this.user = {
