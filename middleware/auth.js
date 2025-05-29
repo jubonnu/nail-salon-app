@@ -1,11 +1,6 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  // Skip auth check for customer-facing routes
-  if (to.path.startsWith('/customer')) {
-    return;
-  }
-  
-  // Skip auth check for login page
-  if (to.path === '/login') {
+  // Skip auth check for auth-related routes
+  if (to.path === '/login' || to.path === '/register' || to.path === '/forgot-password') {
     return;
   }
   

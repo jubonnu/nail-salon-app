@@ -33,9 +33,9 @@ export default defineNuxtConfig({
   hooks: {
     'pages:extend'(pages) {
       pages.push({
-        name: 'index',
-        path: '/',
-        redirect: '/admin/dashboard'
+        name: 'default',
+        path: '/', 
+        redirect: '/login'
       })
     }
   }
