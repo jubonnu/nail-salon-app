@@ -72,14 +72,13 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { useAuthStore } from '~/stores/auth';
-import { useRouter } from 'vue-router';
 
 definePageMeta({
   layout: 'auth',
   middleware: ['guest']
 });
 
-const router = useRouter();
+const router = useRouter()
 const authStore = useAuthStore();
 const formRef = ref(null);
 const loading = ref(false);
@@ -112,7 +111,7 @@ const handleLogin = async () => {
     const success = await authStore.login(form.email, form.password);
     if (success) {
       ElMessage.success('ログインしました');
-      router.push('/admin/dashboard');
+      await navigateTo('/admin/dashboard')
     }
   } catch (error) {
     ElMessage.error('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
