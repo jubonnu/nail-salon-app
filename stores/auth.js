@@ -42,7 +42,7 @@ export const useAuthStore = defineStore('auth', {
         if (email === 'admin@example.com' && password === 'password') {
           this.user = {
             id: 1,
-            name: 'Admin User',
+            name: '管理者',
             email: 'admin@example.com',
             role: 'admin'
           };
