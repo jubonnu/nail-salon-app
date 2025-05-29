@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen">
+  <div>
     <NuxtLayout :name="layout">
       <NuxtPage />
     </NuxtLayout>
@@ -7,16 +7,17 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useAuthStore } from '~/stores/auth'
 
-const route = useRoute();
+const route = useRoute()
+const authStore = useAuthStore()
 
 const layout = computed(() => {
-  // Use auth layout for login, register, and forgot-password pages
-  if (['/login', '/register', '/forgot-password'].includes(route.path)) {
-    return 'auth';
+  if (!authStore.isAuthenticated) {
+    return 'auth'
   }
-  return 'default';
-});
+  return 'default'
+})
 </script>
