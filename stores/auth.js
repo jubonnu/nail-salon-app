@@ -61,12 +61,21 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     
-    logout() {
+    async logout() {
+      // Clear session data
       this.user = null;
       this.token = null;
       this.rememberMe = false;
       localStorage.removeItem('token');
       localStorage.removeItem('rememberMe');
+      
+      // Clear navigation history to prevent back navigation
+      if (window.history && window.history.pushState) {
+        window.history.pushState(null, '', window.location.href);
+        window.onpopstate = () => {
+          window.history.pushState(null, '', window.location.href);
+        };
+      }
     },
     
     async checkAuth() {

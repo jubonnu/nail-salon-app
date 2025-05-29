@@ -12,13 +12,13 @@
           <el-dropdown>
             <span class="flex items-center cursor-pointer">
               <img src="/images/avatar.svg" alt="User" class="h-8 w-8 rounded-full" />
-              <span class="ml-2 hidden md:inline">管理者</span>
+              <span class="ml-2 hidden md:inline">{{ authStore.user?.name || '管理者' }}</span>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item>プロフィール</el-dropdown-item>
                 <el-dropdown-item>設定</el-dropdown-item>
-                <el-dropdown-item divided>ログアウト</el-dropdown-item>
+                <el-dropdown-item divided @click="handleLogout">ログアウト</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -170,6 +170,16 @@ const toggleMobileSidebar = () => {
 
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value;
+};
+
+const handleLogout = async () => {
+  try {
+    await authStore.logout();
+    ElMessage.success('ログアウトしました');
+    await navigateTo('/login');
+  } catch (error) {
+    ElMessage.error('ログアウトに失敗しました');
+  }
 };
 </script>
 
