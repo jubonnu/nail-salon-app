@@ -30,9 +30,10 @@
       <div v-if="!isCustomerMode" class="flex min-h-screen">
         <!-- 管理者サイドバーナビゲーション -->
         <aside
-          class="bg-secondary text-white fixed left-0 top-14 bottom-0 overflow-y-auto z-10 transition-all duration-300 w-64"
+          class="bg-secondary text-white fixed left-0 top-14 bottom-0 overflow-y-auto z-10 transition-all duration-300"
           :class="{
-            'w-20': sidebarCollapsed, 
+            'w-64': !sidebarCollapsed,
+            'w-20': sidebarCollapsed,
             '-translate-x-full md:translate-x-0': isMobileSidebarHidden
           }"
         >
@@ -130,8 +131,10 @@
         
         <!-- メインコンテンツ -->
         <main
-          class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300 ml-0 md:ml-64"
-          :class="{ 'md:ml-20': sidebarCollapsed }"
+          class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300"
+          :style="{ 
+            marginLeft: isCustomerMode ? '0' : (sidebarCollapsed ? '80px' : '256px')
+          }"
           v-if="!isCustomerMode"
         >
           <slot />
