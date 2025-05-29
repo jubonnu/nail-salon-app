@@ -1,4 +1,10 @@
 import { defineStore } from 'pinia';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -18,10 +24,26 @@ export const useAuthStore = defineStore('auth', {
     async register(email, password) {
       this.loading = true;
       this.error = null;
-      
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        // Create user profile
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert([
+            {
+              id: data.user.id,
+              email: data.user.email,
+            }
+          ]);
+
+        if (profileError) throw profileError;
+
         return true;
       } catch (error) {
         this.error = error.message || 'Registration failed';
@@ -34,25 +56,33 @@ export const useAuthStore = defineStore('auth', {
     async login(email, password) {
       this.loading = true;
       this.error = null;
-      
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Simulate successful login
-        if (email === 'admin@example.com' && password === 'password') {
-          this.user = {
-            id: 1,
-            name: '管理者',
-            email: 'admin@example.com',
-            role: 'admin'
-          };
-          this.token = 'fake-jwt-token';
-          localStorage.setItem('token', this.token);
-          localStorage.setItem('rememberMe', this.rememberMe);
-          return true;
-        } else {
-          throw new Error('Invalid credentials');
-        }
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) throw error;
+
+        // Get user profile
+        const { data: profile } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        this.user = {
+          id: data.user.id,
+          email: data.user.email,
+          name: profile?.name || '管理者',
+          role: 'admin'
+        };
+        this.token = data.session.access_token;
+
+        localStorage.setItem('token', this.token);
+        localStorage.setItem('rememberMe', this.rememberMe);
+
+        return true;
       } catch (error) {
         this.error = error.message || 'Authentication failed';
         return false;
@@ -62,6 +92,12 @@ export const useAuthStore = defineStore('auth', {
     },
     
     async logout() {
+      try {
+        await supabase.auth.signOut();
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+
       // Clear session data
       this.user = null;
       this.token = null;
@@ -81,28 +117,37 @@ export const useAuthStore = defineStore('auth', {
     async checkAuth() {
       const token = localStorage.getItem('token');
       const rememberMe = localStorage.getItem('rememberMe') === 'true';
-      
+
       if (!token || !rememberMe) {
         this.logout();
         return false;
       }
-      
+
       this.loading = true;
-      
+
       try {
-        // This would validate token with backend in real implementation
-        // For demo, we'll just set it
-        this.token = token;
-        this.rememberMe = rememberMe;
-        
-        // Simulate fetching user data
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error || !session) {
+          throw new Error('Invalid session');
+        }
+
+        // Get user profile
+        const { data: profile } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
         this.user = {
-          id: 1,
-          name: '管理者',
-          email: 'admin@example.com',
+          id: session.user.id,
+          email: session.user.email,
+          name: profile?.name || '管理者',
           role: 'admin'
         };
-        
+        this.token = session.access_token;
+        this.rememberMe = rememberMe;
+
         return true;
       } catch (error) {
         this.logout();
