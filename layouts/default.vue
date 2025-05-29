@@ -1,17 +1,17 @@
 <template>
   <div class="min-h-screen">
-    <header v-if="isAuthenticated" class="bg-white shadow-sm py-2 px-4 fixed top-0 left-0 right-0 z-20">
+    <header v-if="isAuthenticated" class="bg-white shadow-sm py-2 px-2 sm:px-4 fixed top-0 left-0 right-0 z-20">
       <div class="container mx-auto flex justify-between items-center">
         <div class="flex items-center">
           <NuxtLink to="/admin/dashboard" class="flex items-center">
-            <img src="/images/logo.svg" alt="Nail Salon Logo" class="h-10 w-auto" />
-            <span class="ml-2 text-lg font-semibold text-primary">NailPro</span>
+            <img src="/images/logo.svg" alt="Nail Salon Logo" class="h-8 sm:h-10 w-auto" />
+            <span class="ml-2 text-base sm:text-lg font-semibold text-primary">NailPro</span>
           </NuxtLink>
         </div>
         <div class="flex items-center">
           <el-dropdown>
             <span class="flex items-center cursor-pointer">
-              <img src="/images/avatar.svg" alt="User" class="h-8 w-8 rounded-full" />
+              <img src="/images/avatar.svg" alt="User" class="h-6 w-6 sm:h-8 sm:w-8 rounded-full" />
               <span class="ml-2 hidden md:inline">{{ authStore.user?.name || '管理者' }}</span>
             </span>
             <template #dropdown>
@@ -31,14 +31,15 @@
         <!-- 管理者サイドバーナビゲーション -->
         <aside v-if="isAuthenticated"
           class="bg-secondary text-white fixed left-0 top-14 bottom-0 overflow-y-auto z-10 transition-all duration-300"
-          :class="[
-            sidebarCollapsed ? 'w-20' : 'w-64',
-            isMobileSidebarHidden ? '-translate-x-full md:translate-x-0' : ''
-          ]"
+          :class="{
+            'w-16 sm:w-20': sidebarCollapsed,
+            'w-48 sm:w-64': !sidebarCollapsed,
+            '-translate-x-full md:translate-x-0': isMobileSidebarHidden
+          }"
         >
           <nav class="p-4 relative">
             <button
-              class="bg-secondary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-secondary-dark transition-colors duration-150 float-right mb-4"
+              class="bg-secondary text-white w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shadow-md hover:bg-secondary-dark transition-colors duration-150 float-right mb-4"
               @click="toggleSidebar"
               type="button"
             >
@@ -131,7 +132,14 @@
         <!-- メインコンテンツ -->
         <main
           class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300 bg-white"
-          :style="{ marginLeft: sidebarCollapsed ? '80px' : '256px' }"
+          :style="{ 
+            marginLeft: sidebarCollapsed 
+              ? 'calc(4rem + env(safe-area-inset-left))' 
+              : 'calc(12rem + env(safe-area-inset-left))',
+            '@media (min-width: 640px)': {
+              marginLeft: sidebarCollapsed ? '80px' : '256px'
+            }
+          }"
         >
           <slot />
         </main>

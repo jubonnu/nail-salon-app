@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-8 sm:py-12">
     <div class="max-w-md w-full space-y-8">
       <div>
-        <img src="/images/logo.svg" alt="Logo" class="mx-auto h-12 w-auto" />
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <img src="/images/logo.svg" alt="Logo" class="mx-auto h-10 sm:h-12 w-auto" />
+        <h2 class="mt-4 sm:mt-6 text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
           アカウントにログイン
         </h2>
       </div>
@@ -40,7 +40,7 @@
 
         <div class="flex items-center justify-between">
           <el-checkbox v-model="rememberMe">ログイン状態を保持</el-checkbox>
-          <NuxtLink to="/forgot-password" class="text-sm text-primary hover:text-primary-dark">
+          <NuxtLink to="/forgot-password" class="text-xs sm:text-sm text-primary hover:text-primary-dark">
             パスワードをお忘れの方
           </NuxtLink>
         </div>

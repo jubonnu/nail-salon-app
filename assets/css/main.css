@@ -18,6 +18,25 @@ body {
   font-family: 'Poppins', sans-serif;
   background-color: var(--color-background);
   color: var(--color-text);
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (max-width: 640px) {
+  .el-form-item {
+    margin-bottom: 16px;
+  }
+  
+  .el-input__inner {
+    height: 36px;
+    line-height: 36px;
+  }
+  
+  .el-button {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
 }
 
 .page-enter-active,
