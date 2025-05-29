@@ -130,7 +130,7 @@
         
         <!-- メインコンテンツ -->
         <main
-          class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300 bg-primary-light"
+          class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300 bg-white"
           :style="{ marginLeft: sidebarCollapsed ? '80px' : '256px' }"
         >
           <slot />
