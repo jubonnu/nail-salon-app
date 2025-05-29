@@ -98,7 +98,7 @@ export const useAuthStore = defineStore('auth', {
         // Simulate fetching user data
         this.user = {
           id: 1,
-          name: 'Admin User',
+          name: '管理者',
           email: 'admin@example.com',
           role: 'admin'
         };
