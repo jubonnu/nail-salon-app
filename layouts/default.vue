@@ -131,10 +131,10 @@
         
         <!-- メインコンテンツ -->
         <main
-          class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300 bg-white md:ml-[80px]"
+          class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300 bg-white"
           :class="{
-            'md:ml-[80px]': sidebarCollapsed,
-            'md:ml-[256px]': !sidebarCollapsed
+            'md:ml-20': sidebarCollapsed,
+            'md:ml-64': !sidebarCollapsed
           }"
         >
           <slot />
