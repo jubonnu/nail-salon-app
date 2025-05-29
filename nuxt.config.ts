@@ -8,13 +8,6 @@ export default defineNuxtConfig({
     '@element-plus/nuxt',
     '@vueuse/nuxt'
   ],
-  router: {
-    options: {
-      redirect: {
-        '/': '/admin/dashboard'
-      }
-    }
-  },
   css: [
     '~/assets/css/main.css',
   ],
@@ -35,6 +28,15 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:8080/api'
+    }
+  },
+  hooks: {
+    'pages:extend'(pages) {
+      pages.push({
+        name: 'index',
+        path: '/',
+        redirect: '/admin/dashboard'
+      })
     }
   }
 })
