@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen">
-    <header class="bg-white shadow-sm py-2 px-4 fixed top-0 left-0 right-0 z-20">
+    <header v-if="isAuthenticated" class="bg-white shadow-sm py-2 px-4 fixed top-0 left-0 right-0 z-20">
       <div class="container mx-auto flex justify-between items-center">
         <div class="flex items-center">
           <NuxtLink to="/admin/dashboard" class="flex items-center">
@@ -29,7 +29,7 @@
     <div class="pt-14 min-h-screen">
       <div class="flex min-h-screen">
         <!-- 管理者サイドバーナビゲーション -->
-        <aside
+        <aside v-if="isAuthenticated"
           class="bg-secondary text-white fixed left-0 top-14 bottom-0 overflow-y-auto z-10 transition-all duration-300"
           :class="[
             sidebarCollapsed ? 'w-20' : 'w-64',
@@ -143,6 +143,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { useAuthStore } from '~/stores/auth';
 import {
   ArrowLeft,
   Menu,
@@ -157,6 +158,8 @@ import {
 } from '@element-plus/icons-vue';
 
 const route = useRoute();
+const authStore = useAuthStore();
+const isAuthenticated = computed(() => authStore.isAuthenticated);
 
 const isMobileSidebarHidden = ref(true);
 const sidebarCollapsed = ref(false);
