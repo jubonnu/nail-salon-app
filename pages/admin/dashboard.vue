@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div class="p-4 sm:p-6">
     <h1 class="text-2xl font-bold mb-6">ダッシュボード</h1>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
       <!-- Summary Cards -->
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-sm font-medium text-gray-500 mb-1">本日の来店数</h3>
@@ -37,9 +37,9 @@
       </div>
     </div>
     
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
       <!-- Recent Customers -->
-      <div class="bg-white rounded-lg shadow p-6 lg:col-span-2">
+      <div class="bg-white rounded-lg shadow p-4 sm:p-6 lg:col-span-2">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-medium">最近の来店客</h2>
           <el-button type="primary" size="small" plain>すべて表示</el-button>
@@ -59,7 +59,7 @@
       </div>
       
       <!-- Recent Counseling Forms -->
-      <div class="bg-white rounded-lg shadow p-6">
+      <div class="bg-white rounded-lg shadow p-4 sm:p-6">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-medium">最近のカウンセリングシート</h2>
           <el-button type="primary" size="small" plain>すべて表示</el-button>
@@ -81,7 +81,7 @@
     </div>
     
     <!-- Weekly Revenue Chart -->
-    <div class="mt-6 bg-white rounded-lg shadow p-6">
+    <div class="mt-4 sm:mt-6 bg-white rounded-lg shadow p-4 sm:p-6">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-lg font-medium">週間売上推移</h2>
         <el-select v-model="selectedPeriod" placeholder="期間選択" size="small">
@@ -91,7 +91,7 @@
         </el-select>
       </div>
       
-      <div class="h-80">
+      <div class="h-60 sm:h-80">
         <!-- This would be replaced with actual chart component -->
         <div class="h-full flex items-center justify-center bg-gray-100 rounded">
           <p class="text-gray-500">売上グラフ表示エリア</p>

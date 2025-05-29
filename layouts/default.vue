@@ -131,14 +131,10 @@
         
         <!-- メインコンテンツ -->
         <main
-          class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300 bg-white"
-          :style="{ 
-            marginLeft: sidebarCollapsed 
-              ? 'calc(4rem + env(safe-area-inset-left))' 
-              : 'calc(12rem + env(safe-area-inset-left))',
-            '@media (min-width: 640px)': {
-              marginLeft: sidebarCollapsed ? '80px' : '256px'
-            }
+          class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300 bg-white md:ml-[80px]"
+          :class="{
+            'md:ml-[80px]': sidebarCollapsed,
+            'md:ml-[256px]': !sidebarCollapsed
           }"
         >
           <slot />
@@ -193,11 +189,11 @@ const handleLogout = async () => {
 
 <style scoped>
 .sidebar-link {
-  @apply flex items-center justify-start py-2 px-4 rounded-md hover:bg-secondary-light hover:text-white transition-colors duration-150 mb-1;
+  @apply flex items-center justify-start py-2 px-2 sm:px-4 rounded-md hover:bg-secondary-light hover:text-white transition-colors duration-150 mb-1 text-sm sm:text-base;
 }
 
 .sidebar-link .icon {
-  @apply flex-shrink-0 text-xl;
+  @apply flex-shrink-0 text-lg sm:text-xl;
 }
 
 .sidebar-link:not(.justify-center) .icon {
@@ -221,7 +217,7 @@ const handleLogout = async () => {
 }
 
 .icon {
-  @apply flex-shrink-0 text-xl;
+  @apply flex-shrink-0 text-lg sm:text-xl;
 }
 
 .shadow-up {
