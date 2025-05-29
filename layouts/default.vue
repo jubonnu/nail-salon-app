@@ -32,23 +32,21 @@
         <aside
           class="bg-secondary text-white fixed left-0 top-14 bottom-0 overflow-y-auto z-10 transition-all duration-300"
           :class="{
-            'w-64': !sidebarCollapsed, 
+            'w-64': !sidebarCollapsed,
             'w-20': sidebarCollapsed,
             '-translate-x-full md:translate-x-0': isMobileSidebarHidden
           }"
         >
           <nav class="p-4 relative">
-            <div class="mb-4">
-              <button
-                class="bg-secondary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-secondary-dark transition-colors duration-150 float-right"
-                @click="toggleSidebar"
-                type="button"
-              >
-                <el-icon :class="{ 'transform rotate-180': sidebarCollapsed }">
-                  <ArrowLeft />
-                </el-icon>
-              </button>
-            </div>
+            <button
+              class="bg-secondary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-secondary-dark transition-colors duration-150 float-right mb-4"
+              @click="toggleSidebar"
+              type="button"
+            >
+              <el-icon :class="{ 'transform rotate-180': sidebarCollapsed }">
+                <ArrowLeft />
+              </el-icon>
+            </button>
 
             <div class="mb-8">
               <p class="text-xs uppercase text-gray-400 mb-2 clear-both" :class="{ 'text-center': sidebarCollapsed, 'opacity-0': sidebarCollapsed }">
@@ -133,8 +131,10 @@
         
         <!-- メインコンテンツ -->
         <main
-          class="w-full pb-16 md:pb-0 px-4 transition-all duration-300 md:ml-64"
-          :class="{ 'md:ml-20': sidebarCollapsed }"
+          class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300"
+          :style="{ 
+            marginLeft: isCustomerMode ? '0' : (sidebarCollapsed ? '80px' : '256px')
+          }"
           v-if="!isCustomerMode"
         >
           <slot />
