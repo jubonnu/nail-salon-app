@@ -1,12 +1,12 @@
 <template>
   <div class="min-h-screen">
-    <header v-if="!isCustomerMode" class="bg-white shadow-sm py-2 px-4 fixed top-0 left-0 right-0 z-20">
+    <header class="bg-white shadow-sm py-2 px-4 fixed top-0 left-0 right-0 z-20">
       <div class="container mx-auto flex justify-between items-center">
         <div class="flex items-center">
-          <NuxtLink to="/" class="flex items-center">
+          <div class="flex items-center">
             <img src="/images/logo.svg" alt="Nail Salon Logo" class="h-10 w-auto" />
             <span class="ml-2 text-lg font-semibold text-primary">NailPro</span>
-          </NuxtLink>
+          </div>
         </div>
         <div class="flex items-center">
           <el-dropdown>
@@ -27,7 +27,7 @@
     </header>
     
     <div class="pt-14 min-h-screen">
-      <div class="flex min-h-screen">
+      <div class="flex min-h-screen bg-primary-light">
         <!-- 管理者サイドバーナビゲーション -->
         <aside
           class="bg-secondary text-white fixed left-0 top-14 bottom-0 overflow-y-auto z-10 transition-all duration-300"
@@ -107,7 +107,7 @@
         ></div>
         
         <!-- モバイル用ナビゲーションバー -->
-        <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-up z-10" v-if="!isCustomerMode">
+        <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-up z-10">
           <div class="flex justify-around py-2">
             <NuxtLink to="/admin/dashboard" class="flex flex-col items-center p-2">
               <span class="icon"><i class="el-icon-data-line"></i></span>
@@ -158,7 +158,6 @@ import {
 
 const route = useRoute();
 
-// サイドバーの状態管理
 const isMobileSidebarHidden = ref(true);
 const sidebarCollapsed = ref(false);
 

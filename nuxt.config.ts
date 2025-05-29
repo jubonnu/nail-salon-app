@@ -8,6 +8,13 @@ export default defineNuxtConfig({
     '@element-plus/nuxt',
     '@vueuse/nuxt'
   ],
+  router: {
+    options: {
+      redirect: {
+        '/': '/admin/dashboard'
+      }
+    }
+  },
   css: [
     '~/assets/css/main.css',
   ],
