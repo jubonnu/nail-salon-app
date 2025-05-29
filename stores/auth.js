@@ -49,8 +49,7 @@ export const useAuthStore = defineStore('auth', {
               email: data.user.email
             }
           ])
-          .select()
-          .single();
+          .select();
 
         if (profileError) throw profileError;
 
@@ -75,16 +74,31 @@ export const useAuthStore = defineStore('auth', {
         if (error) throw error;
 
         // Get user profile
-        const { data: profile } = await supabase
+        let { data: profile } = await supabase
           .from('users')
           .select('*')
-          .eq('id', data.user.id)
-          .single();
+          .eq('id', data.user.id);
+
+        // If no profile exists, create one
+        if (!profile || profile.length === 0) {
+          const { data: newProfile, error: profileError } = await supabase
+            .from('users')
+            .insert([
+              {
+                id: data.user.id,
+                email: data.user.email
+              }
+            ])
+            .select();
+
+          if (profileError) throw profileError;
+          profile = newProfile;
+        }
 
         this.user = {
           id: data.user.id,
           email: data.user.email,
-          name: profile?.name || '管理者',
+          name: profile[0]?.name || '管理者',
           role: 'admin'
         };
         this.token = data.session.access_token;
@@ -143,16 +157,31 @@ export const useAuthStore = defineStore('auth', {
         }
 
         // Get user profile
-        const { data: profile } = await supabase
+        let { data: profile } = await supabase
           .from('users')
           .select('*')
-          .eq('id', session.user.id)
-          .single();
+          .eq('id', session.user.id);
+
+        // If no profile exists, create one
+        if (!profile || profile.length === 0) {
+          const { data: newProfile, error: profileError } = await supabase
+            .from('users')
+            .insert([
+              {
+                id: session.user.id,
+                email: session.user.email
+              }
+            ])
+            .select();
+
+          if (profileError) throw profileError;
+          profile = newProfile;
+        }
 
         this.user = {
           id: session.user.id,
           email: session.user.email,
-          name: profile?.name || '管理者',
+          name: profile[0]?.name || '管理者',
           role: 'admin'
         };
         this.token = session.access_token;
