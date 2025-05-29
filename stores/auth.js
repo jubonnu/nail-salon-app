@@ -37,15 +37,20 @@ export const useAuthStore = defineStore('auth', {
           throw error;
         }
 
+        // Wait a moment for the auth user to be fully created
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         // Create user profile
         const { error: profileError } = await supabase
           .from('users')
           .insert([
             {
               id: data.user.id,
-              email: data.user.email,
+              email: data.user.email
             }
-          ]);
+          ])
+          .select()
+          .single();
 
         if (profileError) throw profileError;
 
