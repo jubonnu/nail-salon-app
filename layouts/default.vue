@@ -26,16 +26,15 @@
       </div>
     </header>
     
-    <div class="pt-14 min-h-screen" :class="{ 'pt-0': isCustomerMode }">
-      <div v-if="!isCustomerMode" class="flex min-h-screen">
+    <div class="pt-14 min-h-screen">
+      <div class="flex min-h-screen">
         <!-- 管理者サイドバーナビゲーション -->
         <aside
           class="bg-secondary text-white fixed left-0 top-14 bottom-0 overflow-y-auto z-10 transition-all duration-300"
-          :class="{
-            'w-64': !sidebarCollapsed,
-            'w-20': sidebarCollapsed,
-            '-translate-x-full md:translate-x-0': isMobileSidebarHidden
-          }"
+          :class="[
+            sidebarCollapsed ? 'w-20' : 'w-64',
+            isMobileSidebarHidden ? '-translate-x-full md:translate-x-0' : ''
+          ]"
         >
           <nav class="p-4 relative">
             <button
@@ -132,19 +131,11 @@
         <!-- メインコンテンツ -->
         <main
           class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300"
-          :style="{ 
-            marginLeft: isCustomerMode ? '0' : (sidebarCollapsed ? '80px' : '256px')
-          }"
-          v-if="!isCustomerMode"
+          :style="{ marginLeft: sidebarCollapsed ? '80px' : '256px' }"
         >
           <slot />
         </main>
       </div>
-      
-      <!-- 顧客モードはサイドバーなし、全画面コンテンツ -->
-      <main v-if="isCustomerMode" class="min-h-screen">
-        <slot />
-      </main>
     </div>
   </div>
 </template>
@@ -166,11 +157,6 @@ import {
 } from '@element-plus/icons-vue';
 
 const route = useRoute();
-
-// 顧客モードかどうかをルートに基づいてチェック
-const isCustomerMode = computed(() => {
-  return route.path.startsWith('/customer');
-});
 
 // サイドバーの状態管理
 const isMobileSidebarHidden = ref(true);
