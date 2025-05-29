@@ -30,7 +30,12 @@ export const useAuthStore = defineStore('auth', {
           password,
         });
 
-        if (error) throw error;
+        if (error) {
+          if (error.message === 'User already registered') {
+            throw new Error('このメールアドレスは既に登録されています。ログインしてください。');
+          }
+          throw error;
+        }
 
         // Create user profile
         const { error: profileError } = await supabase

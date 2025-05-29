@@ -139,7 +139,16 @@ const handleRegister = async () => {
       router.push('/admin/dashboard');
     }
   } catch (error) {
-    ElMessage.error('アカウント作成に失敗しました。もう一度お試しください。');
+    if (error.message.includes('既に登録されています')) {
+      ElMessage({
+        message: error.message,
+        type: 'warning',
+        duration: 5000
+      });
+      router.push('/login');
+    } else {
+      ElMessage.error('アカウント作成に失敗しました。もう一度お試しください。');
+    }
   } finally {
     loading.value = false;
   }
