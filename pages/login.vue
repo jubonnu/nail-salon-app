@@ -78,10 +78,6 @@ definePageMeta({
   middleware: ['guest']
 });
 
-definePageMeta({
-  layout: 'auth'
-});
-
 const route = useRoute();
 const router = useRouter()
 const authStore = useAuthStore();
