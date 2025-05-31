@@ -8,7 +8,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light via-white to-secondary-light px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-light via-white to-secondary-light">
     <slot />
   </div>
 </template>
