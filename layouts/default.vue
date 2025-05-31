@@ -131,10 +131,13 @@
         
         <!-- メインコンテンツ -->
         <main
-          class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300 bg-white"
+          class="flex-1 pb-16 md:pb-0 px-4 bg-white w-full"
           :class="[
-            sidebarCollapsed ? 'md:ml-20' : 'md:ml-64',
-            'transition-all duration-300'
+            {
+              'md:ml-20': sidebarCollapsed,
+              'md:ml-64': !sidebarCollapsed
+            },
+            'transition-[margin] duration-300 ease-in-out'
           ]"
         >
           <slot />
@@ -148,7 +151,7 @@
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '~/stores/auth';
-import { useLocalStorage } from '@vueuse/core';
+import { useLocalStorage, useWindowSize } from '@vueuse/core';
 import {
   ArrowLeft,
   Menu,
@@ -167,6 +170,7 @@ const authStore = useAuthStore();
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 const isMobileSidebarHidden = ref(true);
 const sidebarCollapsed = useLocalStorage('sidebarCollapsed', false);
+const { width } = useWindowSize();
 
 const toggleMobileSidebar = () => {
   isMobileSidebarHidden.value = !isMobileSidebarHidden.value;
@@ -174,6 +178,7 @@ const toggleMobileSidebar = () => {
 
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value;
+  window.dispatchEvent(new Event('resize')); // Trigger resize event for any responsive components
 };
 
 const handleLogout = async () => {
@@ -183,6 +188,13 @@ const handleLogout = async () => {
     await navigateTo('/login');
   } catch (error) {
     ElMessage.error('ログアウトに失敗しました');
+  }
+};
+
+// Auto-collapse sidebar on small screens
+watch(width, (newWidth) => {
+  if (newWidth < 768) { // md breakpoint
+    sidebarCollapsed.value = true;
   }
 };
 </script>
