@@ -1,5 +1,6 @@
 <template>
-  <div class="max-w-md w-full space-y-8">
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
       <div>
         <img src="/images/logo.svg" alt="Logo" class="mx-auto h-12 sm:h-16 w-auto transform hover:scale-105 transition-transform duration-300" />
         <h2 class="mt-6 text-center text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -46,6 +47,7 @@
         </div>
       </el-form>
     </div>
+  </div>
 </template>
 
 <script setup>
