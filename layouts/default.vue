@@ -132,10 +132,10 @@
         <!-- メインコンテンツ -->
         <main
           class="flex-1 pb-16 md:pb-0 px-4 transition-all duration-300 bg-white"
-          :class="{
-            'md:ml-20': sidebarCollapsed,
-            'md:ml-64': !sidebarCollapsed
-          }"
+          :class="[
+            sidebarCollapsed ? 'md:ml-20' : 'md:ml-64',
+            'transition-all duration-300'
+          ]"
         >
           <slot />
         </main>
@@ -148,6 +148,7 @@
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '~/stores/auth';
+import { useLocalStorage } from '@vueuse/core';
 import {
   ArrowLeft,
   Menu,
@@ -164,9 +165,8 @@ import {
 const route = useRoute();
 const authStore = useAuthStore();
 const isAuthenticated = computed(() => authStore.isAuthenticated);
-
 const isMobileSidebarHidden = ref(true);
-const sidebarCollapsed = ref(false);
+const sidebarCollapsed = useLocalStorage('sidebarCollapsed', false);
 
 const toggleMobileSidebar = () => {
   isMobileSidebarHidden.value = !isMobileSidebarHidden.value;
