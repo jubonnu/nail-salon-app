@@ -56,6 +56,11 @@
 import { ref, reactive } from 'vue';
 
 definePageMeta({
+  layout: 'auth',
+  middleware: ['guest']
+});
+
+definePageMeta({
   layout: 'auth'
 });
 

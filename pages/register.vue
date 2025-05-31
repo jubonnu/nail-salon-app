@@ -79,6 +79,11 @@ import { useAuthStore } from '~/stores/auth';
 import { useRouter } from 'vue-router';
 
 definePageMeta({
+  layout: 'auth',
+  middleware: ['guest']
+});
+
+definePageMeta({
   layout: 'auth'
 });
 

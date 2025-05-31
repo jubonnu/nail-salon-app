@@ -74,6 +74,11 @@ import { ref, reactive } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 
 definePageMeta({
+  layout: 'auth',
+  middleware: ['guest']
+});
+
+definePageMeta({
   layout: 'auth'
 });
 
