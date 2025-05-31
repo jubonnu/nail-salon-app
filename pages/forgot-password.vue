@@ -25,7 +25,6 @@
             type="email"
             autocomplete="email"
             placeholder="メールアドレス"
-            class="appearance-none rounded-lg relative block w-full border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm bg-white/50"
           />
         </el-form-item>
 
