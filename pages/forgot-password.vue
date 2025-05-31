@@ -55,6 +55,10 @@
 <script setup>
 import { ref, reactive } from 'vue';
 
+definePageMeta({
+  layout: 'auth'
+});
+
 const formRef = ref(null);
 const loading = ref(false);
 

@@ -78,6 +78,10 @@ import { ref, reactive } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { useRouter } from 'vue-router';
 
+definePageMeta({
+  layout: 'auth'
+});
+
 const router = useRouter();
 const authStore = useAuthStore();
 const formRef = ref(null);
