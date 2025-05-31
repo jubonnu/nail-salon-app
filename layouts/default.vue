@@ -137,13 +137,13 @@
         
         <!-- メインコンテンツ -->
         <main
-          class="flex-1 pb-16 md:pb-0 px-4 bg-white w-full"
+          class="flex-1 pb-16 md:pb-0 px-4 bg-white w-full overflow-x-hidden"
           :class="[
             {
               'md:ml-20': sidebarCollapsed,
               'md:ml-64': !sidebarCollapsed
             },
-            'transition-[margin] duration-300 ease-in-out'
+            'transition-[margin] duration-300 ease-in-out will-change-[margin]'
           ]"
         >
           <slot />
@@ -184,7 +184,6 @@ const toggleMobileSidebar = () => {
 
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value;
-  window.dispatchEvent(new Event('resize')); // Trigger resize event for any responsive components
 };
 
 const handleLogout = async () => {
