@@ -60,10 +60,6 @@ definePageMeta({
   middleware: ['guest']
 });
 
-definePageMeta({
-  layout: 'auth'
-});
-
 const formRef = ref(null);
 const loading = ref(false);
 
