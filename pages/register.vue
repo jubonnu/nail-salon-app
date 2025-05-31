@@ -14,39 +14,37 @@
         class="mt-8 space-y-6"
         @submit.prevent="handleRegister"
       >
-        <div class="rounded-md shadow-sm -space-y-px">
-          <el-form-item prop="email">
-            <el-input
-              v-model="form.email"
-              type="email"
-              autocomplete="email"
-              placeholder="メールアドレス"
-              class="appearance-none rounded-t-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm bg-white/50"
-            />
-          </el-form-item>
+        <el-form-item prop="email">
+          <el-input
+            v-model="form.email"
+            type="email"
+            autocomplete="email"
+            placeholder="メールアドレス"
+            class="appearance-none rounded-t-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm bg-white/50"
+          />
+        </el-form-item>
           
-          <el-form-item prop="password">
-            <el-input
-              v-model="form.password"
-              type="password"
-              autocomplete="new-password"
-              placeholder="パスワード"
-              class="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm bg-white/50"
-              show-password
-            />
-          </el-form-item>
+        <el-form-item prop="password">
+          <el-input
+            v-model="form.password"
+            type="password"
+            autocomplete="new-password"
+            placeholder="パスワード"
+            class="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm bg-white/50"
+            show-password
+          />
+        </el-form-item>
           
-          <el-form-item prop="confirmPassword">
-            <el-input
-              v-model="form.confirmPassword"
-              type="password"
-              autocomplete="new-password"
-              placeholder="パスワード(確認用)"
-              class="appearance-none rounded-b-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm bg-white/50"
-              show-password
-            />
-          </el-form-item>
-        </div>
+        <el-form-item prop="confirmPassword">
+          <el-input
+            v-model="form.confirmPassword"
+            type="password"
+            autocomplete="new-password"
+            placeholder="パスワード(確認用)"
+            class="appearance-none rounded-b-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm bg-white/50"
+            show-password
+          />
+        </el-form-item>
 
         <div>
           <el-button
