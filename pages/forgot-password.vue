@@ -1,12 +1,12 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
+    <div class="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl">
       <div>
-        <img src="/images/logo.svg" alt="Logo" class="mx-auto h-12 w-auto" />
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <img src="/images/logo.svg" alt="Logo" class="mx-auto h-12 sm:h-16 w-auto transform hover:scale-105 transition-transform duration-300" />
+        <h2 class="mt-6 text-center text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           パスワードをリセット
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
+        <p class="mt-4 text-center text-sm text-gray-600 leading-relaxed">
           登録したメールアドレスを入力してください。<br>
           パスワードリセット用のリンクをお送りします。
         </p>
@@ -26,7 +26,7 @@
               type="email"
               autocomplete="email"
               placeholder="メールアドレス"
-              class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+              class="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 sm:text-sm bg-white/50"
             />
           </el-form-item>
         </div>
@@ -35,7 +35,7 @@
           <el-button
             type="primary"
             native-type="submit"
-            class="w-full"
+            class="w-full py-3 text-base font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
             :loading="loading"
           >
             リセットリンクを送信
