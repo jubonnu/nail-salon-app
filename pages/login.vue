@@ -12,7 +12,7 @@
         ref="formRef"
         :model="form"
         :rules="rules"
-        class="mt-8 space-y-6"
+        class="mt-8 space-y-8"
         @submit.prevent="handleLogin"
       >
         <el-form-item prop="email">
@@ -21,6 +21,7 @@
             type="email"
             autocomplete="email"
             placeholder="メールアドレス"
+            size="large"
           />
         </el-form-item>
           
@@ -30,6 +31,7 @@
             type="password"
             autocomplete="current-password"
             placeholder="パスワード"
+            size="large"
             show-password
           />
         </el-form-item>
@@ -45,7 +47,8 @@
           <el-button
             type="primary"
             native-type="submit"
-            class="w-full py-3 text-base font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+            class="w-full text-base font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+            size="large"
             :loading="loading"
           >
             ログイン
