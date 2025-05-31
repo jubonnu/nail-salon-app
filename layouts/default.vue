@@ -11,17 +11,21 @@
         <div class="flex items-center">
           <el-dropdown>
             <span class="flex items-center cursor-pointer">
-              <img src="/images/avatar.svg" alt="User" class="h-6 w-6 sm:h-8 sm:w-8 rounded-full" />
-              <span class="ml-2 hidden md:inline">{{ authStore.user?.name || '管理者' }}</span>
+              <img 
+                src="/images/avatar.svg" 
+                alt="User" 
+                class="h-6 w-6 sm:h-8 sm:w-8 rounded-full" 
+              />
+              <span class="ml-2 hidden md:inline">
+                {{ authStore.user?.name || '管理者' }}
+              </span>
             </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item>プロフィール</el-dropdown-item>
-                <el-dropdown-item>設定</el-dropdown-item>
-                <el-dropdown-item divided @click="handleLogout">ログアウト</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
           </el-dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item>プロフィール</el-dropdown-item>
+            <el-dropdown-item>設定</el-dropdown-item>
+            <el-dropdown-item divided @click="handleLogout">ログアウト</el-dropdown-item>
+          </el-dropdown-menu>
         </div>
       </div>
     </header>
@@ -192,11 +196,11 @@ const handleLogout = async () => {
 };
 
 // Auto-collapse sidebar on small screens
-watch(width, (newWidth) => {
+watch(() => width.value, (newWidth) => {
   if (newWidth < 768) { // md breakpoint
     sidebarCollapsed.value = true;
   }
-};
+});
 </script>
 
 <style scoped>
