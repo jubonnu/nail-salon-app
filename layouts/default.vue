@@ -20,12 +20,14 @@
                 {{ authStore.user?.name || '管理者' }}
               </span>
             </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item>プロフィール</el-dropdown-item>
+                <el-dropdown-item>設定</el-dropdown-item>
+                <el-dropdown-item divided @click="handleLogout">ログアウト</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
           </el-dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item>プロフィール</el-dropdown-item>
-            <el-dropdown-item>設定</el-dropdown-item>
-            <el-dropdown-item divided @click="handleLogout">ログアウト</el-dropdown-item>
-          </el-dropdown-menu>
         </div>
       </div>
     </header>
