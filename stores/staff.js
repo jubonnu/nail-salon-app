@@ -1,10 +1,14 @@
 import { defineStore } from 'pinia';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 export const useStaffStore = defineStore('staff', {
   state: () => ({
     staff: [],
-    schedules: {},
-    performance: {},
     loading: false,
     error: null
   }),
@@ -13,40 +17,14 @@ export const useStaffStore = defineStore('staff', {
     async fetchStaff() {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        const data = await $api.staff.getAll();
-        this.staff = data;
-        return data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
+        const { data, error } = await supabase
+          .from('staff')
+          .select('*')
+          .order('name');
 
-    async fetchSchedule(staffId, date) {
-      this.loading = true;
-      try {
-        const { $api } = useNuxtApp();
-        const data = await $api.staff.getSchedule(staffId, date);
-        this.schedules[`${staffId}-${date}`] = data;
-        return data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async fetchPerformance(staffId, startDate, endDate) {
-      this.loading = true;
-      try {
-        const { $api } = useNuxtApp();
-        const data = await $api.staff.getPerformance(staffId, startDate, endDate);
-        this.performance[`${staffId}-${startDate}-${endDate}`] = data;
-        return data;
+        if (error) throw error;
+        this.staff = data || [];
+        return this.staff;
       } catch (error) {
         this.error = error.message;
         throw error;
@@ -58,10 +36,15 @@ export const useStaffStore = defineStore('staff', {
     async createStaff(data) {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        const staff = await $api.staff.create(data);
-        this.staff.push(staff);
-        return staff;
+        const { data: newStaff, error } = await supabase
+          .from('staff')
+          .insert([data])
+          .select()
+          .single();
+
+        if (error) throw error;
+        this.staff.push(newStaff);
+        return newStaff;
       } catch (error) {
         this.error = error.message;
         throw error;
@@ -73,8 +56,14 @@ export const useStaffStore = defineStore('staff', {
     async updateStaff(id, data) {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        const updated = await $api.staff.update(id, data);
+        const { data: updated, error } = await supabase
+          .from('staff')
+          .update(data)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
         const index = this.staff.findIndex(s => s.id === id);
         if (index !== -1) {
           this.staff[index] = updated;
@@ -91,23 +80,16 @@ export const useStaffStore = defineStore('staff', {
     async deleteStaff(id) {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        await $api.staff.delete(id);
+        const { error } = await supabase
+          .from('staff')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
         const index = this.staff.findIndex(s => s.id === id);
         if (index !== -1) {
           this.staff.splice(index, 1);
         }
-        // Clear cached data
-        Object.keys(this.schedules).forEach(key => {
-          if (key.startsWith(`${id}-`)) {
-            delete this.schedules[key];
-          }
-        });
-        Object.keys(this.performance).forEach(key => {
-          if (key.startsWith(`${id}-`)) {
-            delete this.performance[key];
-          }
-        });
       } catch (error) {
         this.error = error.message;
         throw error;

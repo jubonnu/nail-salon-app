@@ -87,22 +87,43 @@
       width="500px"
     >
       <el-form :model="reservationForm" label-position="top" :rules="rules" ref="formRef">
-        <el-form-item label="お客様名" prop="customerName">
-          <el-input v-model="reservationForm.customerName" />
+        <el-form-item label="お客様" prop="customer_id">
+          <el-select
+            v-model="reservationForm.customer_id"
+            filterable
+            placeholder="顧客を選択"
+            class="w-full"
+          >
+            <el-option
+              v-for="customer in customers"
+              :key="customer.id"
+              :label="customer.name"
+              :value="customer.id"
+            >
+              <div>
+                <div>{{ customer.name }}</div>
+                <div class="text-xs text-gray-500">
+                  {{ customer.phone }} / {{ customer.email }}
+                </div>
+              </div>
+            </el-option>
+          </el-select>
         </el-form-item>
 
-        <el-form-item label="予約日時" prop="datetime">
+        <el-form-item label="予約日時" prop="start_time">
           <el-date-picker
-            v-model="reservationForm.datetime"
+            v-model="reservationForm.start_time"
             type="datetime"
             format="YYYY/MM/DD HH:mm"
             placeholder="日時を選択"
             class="w-full"
+            :disabled-date="disabledDate"
+            :disabled-hours="disabledHours"
           />
         </el-form-item>
 
-        <el-form-item label="施術内容" prop="service">
-          <el-select v-model="reservationForm.service" class="w-full">
+        <el-form-item label="施術内容" prop="service_type">
+          <el-select v-model="reservationForm.service_type" class="w-full">
             <el-option label="ジェルネイル" value="ジェルネイル" />
             <el-option label="ネイルケア" value="ネイルケア" />
             <el-option label="ネイルアート" value="ネイルアート" />
@@ -110,11 +131,14 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="担当スタッフ" prop="staff">
-          <el-select v-model="reservationForm.staff" class="w-full">
-            <el-option label="山田 愛子" value="山田 愛子" />
-            <el-option label="佐藤 美咲" value="佐藤 美咲" />
-            <el-option label="田中 優子" value="田中 優子" />
+        <el-form-item label="担当スタッフ" prop="staff_id">
+          <el-select v-model="reservationForm.staff_id" class="w-full">
+            <el-option
+              v-for="staff in staffMembers"
+              :key="staff.id"
+              :label="staff.name"
+              :value="staff.id"
+            />
           </el-select>
         </el-form-item>
 
@@ -305,6 +329,19 @@ const getReservationsForDate = computed(() => (date) => {
   );
 });
 
+const disabledDate = (date) => {
+  return date < dayjs().startOf('day');
+};
+
+const disabledHours = () => {
+  const hours = [];
+  for (let i = 0; i < 24; i++) {
+    if (i < 9 || i >= 19) {
+      hours.push(i);
+    }
+  }
+  return hours;
+};
 const getReservationClass = (reservation) => {
   return {
     'bg-primary text-white': reservation.service_type === 'ジェルネイル',
