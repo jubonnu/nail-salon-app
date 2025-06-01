@@ -2,12 +2,19 @@
   <div>
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold">Instagram投稿管理</h1>
-      <el-button type="primary" @click="showCreatePostDialog = true">
+      <el-button 
+        type="primary" 
+        @click="showCreatePostDialog = true"
+        :loading="loading"
+      >
         新規投稿作成
       </el-button>
     </div>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div 
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      v-loading="loading"
+    >
       <div v-for="post in instagramPosts" :key="post.id" class="bg-white rounded-lg shadow overflow-hidden">
         <div class="relative aspect-square">
           <img :src="post.imageUrl" alt="Nail design" class="w-full h-full object-cover" />
@@ -117,43 +124,17 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
+import { useInstagramStore } from '~/stores/instagram';
 
-// State
+const instagramStore = useInstagramStore();
 const showCreatePostDialog = ref(false);
 const editingPost = ref(false);
 const editingPostId = ref(null);
 
-// Sample data
-const instagramPosts = ref([
-  {
-    id: 1,
-    imageUrl: 'https://images.pexels.com/photos/704815/pexels-photo-704815.jpeg',
-    caption: '桜をイメージしたジェルネイル。春にぴったりのデザインです！✨💅',
-    hashtags: ['#ネイルアート', '#ジェルネイル', '#桜ネイル', '#春ネイル'],
-    status: 'published',
-    publishedDate: '2024-03-28',
-    scheduledDate: null
-  },
-  {
-    id: 2,
-    imageUrl: 'https://images.pexels.com/photos/3997385/pexels-photo-3997385.jpeg',
-    caption: 'モダンなアレンジを加えたエレガントなフレンチネイル。クラシックは永遠に色褪せません！',
-    hashtags: ['#フレンチネイル', '#ネイルデザイン', '#エレガントネイル'],
-    status: 'scheduled',
-    publishedDate: null,
-    scheduledDate: '2024-04-05 10:00'
-  },
-  {
-    id: 3,
-    imageUrl: 'https://images.pexels.com/photos/2253833/pexels-photo-2253833.jpeg',
-    caption: '明るく鮮やかな夏カラーで気分を上げましょう！お気に入りの色はどれですか？',
-    hashtags: ['#夏ネイル', '#カラフルネイル', '#ネイルデザイン'],
-    status: 'draft',
-    publishedDate: null,
-    scheduledDate: null
-  }
-]);
+const loading = computed(() => instagramStore.loading);
+const error = computed(() => instagramStore.error);
+const instagramPosts = computed(() => [...instagramStore.posts, ...instagramStore.scheduledPosts]);
 
 // Form model
 const postForm = reactive({
@@ -176,6 +157,17 @@ const commonHashtags = [
   '#美甲',
   '#ネイルスタイル'
 ];
+
+const loadPosts = async () => {
+  try {
+    await Promise.all([
+      instagramStore.fetchPosts(),
+      instagramStore.fetchScheduledPosts()
+    ]);
+  } catch (e) {
+    ElMessage.error('投稿の取得に失敗しました');
+  }
+};
 
 // Methods
 const handleImageChange = (file) => {
@@ -200,33 +192,35 @@ const editPost = (post) => {
   showCreatePostDialog.value = true;
 };
 
-const savePost = () => {
+const savePost = async () => {
   if (editingPost.value) {
-    // Update existing post
-    const postIndex = instagramPosts.value.findIndex(p => p.id === editingPostId.value);
-    if (postIndex !== -1) {
-      const updatedPost = {
-        ...instagramPosts.value[postIndex],
+    try {
+      await instagramStore.updatePost(editingPostId.value, {
         imageUrl: postForm.imageUrl,
         caption: postForm.caption,
-        hashtags: [...postForm.hashtags],
+        hashtags: postForm.hashtags,
         scheduledDate: postForm.scheduledDate,
         status: postForm.scheduledDate ? 'scheduled' : 'draft'
-      };
-      instagramPosts.value[postIndex] = updatedPost;
+      });
+      ElMessage.success('投稿を更新しました');
+    } catch (e) {
+      ElMessage.error('投稿の更新に失敗しました');
+      return;
     }
   } else {
-    // Create new post
-    const newPost = {
-      id: instagramPosts.value.length + 1,
-      imageUrl: postForm.imageUrl,
-      caption: postForm.caption,
-      hashtags: [...postForm.hashtags],
-      scheduledDate: postForm.scheduledDate,
-      status: postForm.scheduledDate ? 'scheduled' : 'draft',
-      publishedDate: null
-    };
-    instagramPosts.value.unshift(newPost);
+    try {
+      await instagramStore.createPost({
+        imageUrl: postForm.imageUrl,
+        caption: postForm.caption,
+        hashtags: postForm.hashtags,
+        scheduledDate: postForm.scheduledDate,
+        status: postForm.scheduledDate ? 'scheduled' : 'draft'
+      });
+      ElMessage.success('投稿を作成しました');
+    } catch (e) {
+      ElMessage.error('投稿の作成に失敗しました');
+      return;
+    }
   }
   
   // Reset form and close dialog
@@ -236,31 +230,30 @@ const savePost = () => {
   editingPostId.value = null;
 };
 
-const schedulePost = (post) => {
-  // Open scheduling dialog or directly schedule for a default time
-  const postIndex = instagramPosts.value.findIndex(p => p.id === post.id);
-  if (postIndex !== -1) {
-    // For demo, just set a date 1 day in the future
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(10, 0, 0, 0);
-    
-    instagramPosts.value[postIndex] = {
+const schedulePost = async (post) => {
+  try {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await instagramStore.updatePost(post.id, {
       ...post,
-      scheduledDate: tomorrow.toLocaleString(),
+      scheduledDate: tomorrow,
       status: 'scheduled'
-    };
+    });
+    ElMessage.success('投稿を予約しました');
+  } catch (e) {
+    ElMessage.error('投稿の予約に失敗しました');
   }
 };
 
-const unschedulePost = (post) => {
-  const postIndex = instagramPosts.value.findIndex(p => p.id === post.id);
-  if (postIndex !== -1) {
-    instagramPosts.value[postIndex] = {
+const unschedulePost = async (post) => {
+  try {
+    await instagramStore.updatePost(post.id, {
       ...post,
       scheduledDate: null,
       status: 'draft'
-    };
+    });
+    ElMessage.success('予約を解除しました');
+  } catch (e) {
+    ElMessage.error('予約の解除に失敗しました');
   }
 };
 
@@ -270,4 +263,6 @@ const resetPostForm = () => {
   postForm.hashtags = [];
   postForm.scheduledDate = null;
 };
+
+onMounted(loadPosts);
 </script>
