@@ -1,4 +1,10 @@
 import { defineStore } from 'pinia';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 export const useCounselingStore = defineStore('counseling', {
   state: () => ({
@@ -19,85 +25,141 @@ export const useCounselingStore = defineStore('counseling', {
       this.error = null;
       
       try {
-        // This would be an actual API call in a real implementation
-        // const response = await fetch(`${apiBaseUrl}/counseling-sheets`);
-        // const data = await response.json();
-        
-        // Simulate API call for demo
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Sample data
-        this.counselingSheets = [
-          {
-            id: 1,
-            customerName: 'Kobayashi Aiko',
-            phone: '070-1234-8765',
-            email: 'kobayashi.aiko@example.com',
-            serviceType: 'Gel Nail',
-            nailLength: 'medium',
-            nailShape: 'almond',
-            hasAllergies: false,
-            allergiesDetails: '',
-            hasMedicalConditions: false,
-            medicalDetails: '',
-            notes: 'Prefer pastel colors and minimal design.',
-            status: 'New',
-            submissionDate: '2024-04-03 14:30'
-          },
-          // Add more sample data here...
-        ];
+        const { data, error } = await supabase
+          .from('counseling_sheets')
+          .select(`
+            *,
+            customers (
+              name,
+              email,
+              phone
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        this.counselingSheets = data || [];
+        return this.counselingSheets;
       } catch (error) {
-        this.error = error.message || 'Failed to fetch counseling sheets';
+        this.error = error.message;
+        throw error;
       } finally {
         this.loading = false;
       }
     },
     
     async processSheet(sheetId) {
-      const sheet = this.counselingSheets.find(s => s.id === sheetId);
-      if (!sheet) return;
-      
+      this.loading = true;
       try {
-        // This would be an actual API call in a real implementation
-        // await fetch(`${apiBaseUrl}/counseling-sheets/${sheetId}`, {
-        //   method: 'PATCH',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //   },
-        //   body: JSON.stringify({ status: 'Processed' }),
-        // });
-        
-        // Update locally
-        sheet.status = 'Processed';
+        const { data, error } = await supabase
+          .from('counseling_sheets')
+          .update({ status: 'Processed' })
+          .eq('id', sheetId)
+          .select(`
+            *,
+            customers (
+              name,
+              email,
+              phone
+            )
+          `)
+          .single();
+
+        if (error) throw error;
+
+        const index = this.counselingSheets.findIndex(s => s.id === sheetId);
+        if (index !== -1) {
+          this.counselingSheets[index] = data;
+        }
+
+        return data;
       } catch (error) {
-        this.error = error.message || 'Failed to process sheet';
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
       }
     },
     
     async archiveSheet(sheetId) {
-      const sheet = this.counselingSheets.find(s => s.id === sheetId);
-      if (!sheet) return;
-      
+      this.loading = true;
       try {
-        // This would be an API call in a real implementation
-        // Update locally
-        sheet.status = 'Archived';
+        const { data, error } = await supabase
+          .from('counseling_sheets')
+          .update({ status: 'Archived' })
+          .eq('id', sheetId)
+          .select(`
+            *,
+            customers (
+              name,
+              email,
+              phone
+            )
+          `)
+          .single();
+
+        if (error) throw error;
+
+        const index = this.counselingSheets.findIndex(s => s.id === sheetId);
+        if (index !== -1) {
+          this.counselingSheets[index] = data;
+        }
+
+        return data;
       } catch (error) {
-        this.error = error.message || 'Failed to archive sheet';
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
       }
     },
     
     async deleteSheet(sheetId) {
+      this.loading = true;
       try {
-        // This would be an API call in a real implementation
-        
-        // Update locally
+        const { error } = await supabase
+          .from('counseling_sheets')
+          .delete()
+          .eq('id', sheetId);
+
+        if (error) throw error;
+
         const index = this.counselingSheets.findIndex(s => s.id === sheetId);
         if (index !== -1) {
           this.counselingSheets.splice(index, 1);
         }
       } catch (error) {
-        this.error = error.message || 'Failed to delete sheet';
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async createSheet(data) {
+      this.loading = true;
+      try {
+        const { data: newSheet, error } = await supabase
+          .from('counseling_sheets')
+          .insert([data])
+          .select(`
+            *,
+            customers (
+              name,
+              email,
+              phone
+            )
+          `)
+          .single();
+
+        if (error) throw error;
+        this.counselingSheets.unshift(newSheet);
+        return newSheet;
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
       }
     }
   }

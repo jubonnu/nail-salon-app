@@ -146,20 +146,23 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useCounselingStore } from '~/stores/counseling';
 
 const router = useRouter();
+const counselingStore = useCounselingStore();
 const activeTab = ref('new');
-const loading = ref(true);
 const showSheetDrawer = ref(false);
 const showDeleteDialog = ref(false);
 const selectedSheet = ref(null);
 const sheetToDelete = ref(null);
 const deletingSheet = ref(false);
 
-// サンプルデータ
-const newSheets = ref([]);
-const processedSheets = ref([]);
-const archivedSheets = ref([]);
+// Computed properties
+const loading = computed(() => counselingStore.loading);
+const error = computed(() => counselingStore.error);
+const newSheets = computed(() => counselingStore.newSheets);
+const processedSheets = computed(() => counselingStore.processedSheets);
+const archivedSheets = computed(() => counselingStore.archivedSheets);
 
 // メソッド
 const createNewSheet = () => {
@@ -168,11 +171,7 @@ const createNewSheet = () => {
 
 const handleTabChange = () => {
   loading.value = true;
-  
-  // API呼び出しのシミュレーション
-  setTimeout(() => {
-    loading.value = false;
-  }, 500);
+  counselingStore.fetchCounselingSheets();
 };
 
 const viewSheet = (sheet) => {
@@ -182,30 +181,22 @@ const viewSheet = (sheet) => {
 
 const processSheet = (sheet) => {
   if (sheet.status === 'New') {
-    const index = newSheets.value.findIndex(s => s.id === sheet.id);
-    if (index !== -1) {
-      const updatedSheet = { ...newSheets.value[index], status: 'Processed' };
-      processedSheets.value.unshift(updatedSheet);
-      newSheets.value.splice(index, 1);
-      
-      if (selectedSheet.value && selectedSheet.value.id === sheet.id) {
-        selectedSheet.value = updatedSheet;
-      }
+    try {
+      await counselingStore.processSheet(sheet.id);
+      ElMessage.success('カウンセリングシートを処理しました');
+    } catch (error) {
+      ElMessage.error('処理に失敗しました');
     }
   }
 };
 
-const archiveSheet = (sheet) => {
+const archiveSheet = async (sheet) => {
   if (sheet.status === 'Processed') {
-    const index = processedSheets.value.findIndex(s => s.id === sheet.id);
-    if (index !== -1) {
-      const updatedSheet = { ...processedSheets.value[index], status: 'Archived' };
-      archivedSheets.value.unshift(updatedSheet);
-      processedSheets.value.splice(index, 1);
-      
-      if (selectedSheet.value && selectedSheet.value.id === sheet.id) {
-        selectedSheet.value = updatedSheet;
-      }
+    try {
+      await counselingStore.archiveSheet(sheet.id);
+      ElMessage.success('カウンセリングシートをアーカイブしました');
+    } catch (error) {
+      ElMessage.error('アーカイブに失敗しました');
     }
   }
 };
@@ -221,30 +212,14 @@ const deleteSheet = async () => {
   deletingSheet.value = true;
   
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const sheet = sheetToDelete.value;
-    let sourceList;
-    
-    if (sheet.status === 'New') {
-      sourceList = newSheets;
-    } else if (sheet.status === 'Processed') {
-      sourceList = processedSheets;
-    } else {
-      sourceList = archivedSheets;
-    }
-    
-    const index = sourceList.value.findIndex(s => s.id === sheet.id);
-    if (index !== -1) {
-      sourceList.value.splice(index, 1);
-    }
-    
+    await counselingStore.deleteSheet(sheetToDelete.value.id);
+    ElMessage.success('カウンセリングシートを削除しました');
     showDeleteDialog.value = false;
-    if (selectedSheet.value && selectedSheet.value.id === sheet.id) {
+    if (selectedSheet.value && selectedSheet.value.id === sheetToDelete.value.id) {
       showSheetDrawer.value = false;
     }
   } catch (error) {
-    console.error('シート削除エラー:', error);
+    ElMessage.error('削除に失敗しました');
   } finally {
     deletingSheet.value = false;
   }
@@ -310,114 +285,7 @@ const getNailShapeLabel = (shape) => {
 
 // 初期データの読み込み
 onMounted(() => {
-  setTimeout(() => {
-    newSheets.value = [
-      {
-        id: 1,
-        customerName: '小林 愛子',
-        phone: '070-1234-8765',
-        email: 'kobayashi.aiko@example.com',
-        serviceType: 'ジェルネイル',
-        nailLength: 'medium',
-        nailShape: 'almond',
-        hasAllergies: false,
-        allergiesDetails: '',
-        hasMedicalConditions: false,
-        medicalDetails: '',
-        notes: 'パステルカラーでシンプルなデザインを希望。',
-        status: 'New',
-        submissionDate: '2024-04-03 14:30'
-      },
-      {
-        id: 2,
-        customerName: '中村 由衣',
-        phone: '090-8765-1234',
-        email: 'nakamura.yui@example.com',
-        serviceType: 'ネイルケア',
-        nailLength: 'short',
-        nailShape: 'square',
-        hasAllergies: true,
-        allergiesDetails: 'アクリル製品にアレルギーあり。',
-        hasMedicalConditions: false,
-        medicalDetails: '',
-        notes: 'シンプルで清潔感のあるデザインを希望。',
-        status: 'New',
-        submissionDate: '2024-04-03 13:15'
-      },
-      {
-        id: 3,
-        customerName: '加藤 理沙',
-        phone: '080-2468-9753',
-        email: 'kato.risa@example.com',
-        serviceType: 'ネイルアート',
-        nailLength: 'long',
-        nailShape: 'stiletto',
-        hasAllergies: false,
-        allergiesDetails: '',
-        hasMedicalConditions: false,
-        medicalDetails: '',
-        notes: '桜をモチーフにしたネイルアートを希望。',
-        status: 'New',
-        submissionDate: '2024-04-03 11:45'
-      }
-    ];
-    
-    processedSheets.value = [
-      {
-        id: 4,
-        customerName: '田中 優子',
-        phone: '090-1234-5678',
-        email: 'tanaka.yuki@example.com',
-        serviceType: 'ジェルネイル',
-        nailLength: 'medium',
-        nailShape: 'oval',
-        hasAllergies: false,
-        allergiesDetails: '',
-        hasMedicalConditions: false,
-        medicalDetails: '',
-        notes: 'ピンクとホワイトのカラーを希望。',
-        status: 'Processed',
-        submissionDate: '2024-04-02 16:00'
-      },
-      {
-        id: 5,
-        customerName: '鈴木 明',
-        phone: '080-8765-4321',
-        email: 'suzuki.akira@example.com',
-        serviceType: 'ネイルケア',
-        nailLength: 'short',
-        nailShape: 'round',
-        hasAllergies: false,
-        allergiesDetails: '',
-        hasMedicalConditions: false,
-        medicalDetails: '',
-        notes: '短時間での施術を希望。',
-        status: 'Processed',
-        submissionDate: '2024-04-01 10:30'
-      }
-    ];
-    
-    archivedSheets.value = [
-      {
-        id: 6,
-        customerName: '渡辺 美緒',
-        phone: '070-2468-1357',
-        email: 'watanabe.mio@example.com',
-        serviceType: 'ネイルアート',
-        nailLength: 'medium',
-        nailShape: 'coffin',
-        hasAllergies: true,
-        allergiesDetails: '強い接着剤に敏感。',
-        hasMedicalConditions: false,
-        medicalDetails: '',
-        notes: '細かいネイルアートデザインを希望。',
-        status: 'Archived',
-        submissionDate: '2024-03-25 14:00'
-      }
-    ];
-    
-    loading.value = false;
-  }, 1000);
+  counselingStore.fetchCounselingSheets();
 });
 </script>
 
