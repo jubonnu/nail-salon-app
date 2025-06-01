@@ -42,5 +42,8 @@ export { useCounselingStore } from '../stores/counseling';
 export { useInstagramStore } from '../stores/instagram';
 export { useSalesStore } from '../stores/sales';
 export { useStaffStore } from '../stores/staff';
+export { useInstagramStore } from '../stores/instagram';
+export { useSalesStore } from '../stores/sales';
+export { useStaffStore } from '../stores/staff';
 export { defineStore, acceptHMRUpdate, usePinia, storeToRefs } from '../node_modules/@pinia/nuxt/dist/runtime/composables';
 export { definePageMeta } from '../node_modules/nuxt/dist/pages/runtime/composables';
