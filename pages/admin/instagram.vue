@@ -14,7 +14,7 @@
     <div 
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       v-loading="loading"
-      v-if="instagramPosts.length > 0"
+      v-if="sortedPosts.length > 0"
     >
       <div v-for="post in sortedPosts" :key="post.id" class="bg-white rounded-lg shadow overflow-hidden">
         <div class="relative aspect-square">
@@ -22,7 +22,7 @@
             :src="post.image_url" 
             :alt="post.caption || 'Nail design'" 
             class="w-full h-full object-cover"
-            @error="handleImageError($event, post)"
+            @error="handleImageError(post)"
           />
           <div class="absolute top-2 right-2">
             <el-tag v-if="post.status === 'scheduled'" type="warning">予約済み</el-tag>
@@ -142,7 +142,6 @@ const fallbackImageUrl = 'https://images.pexels.com/photos/3997391/pexels-photo-
 const loading = computed(() => instagramStore.loading);
 const error = computed(() => instagramStore.error);
 const sortedPosts = computed(() => instagramStore.sortedPosts);
-const instagramPosts = computed(() => instagramStore.allPosts);
 
 // Form model
 const postForm = reactive({
@@ -166,10 +165,10 @@ const commonHashtags = [
   '#ネイルスタイル'
 ];
 
-const handleImageError = (event, post) => {
-  // Set fallback image if original fails to load
-  event.target.src = fallbackImageUrl;
-  // Update post in database with fallback image
+const handleImageError = async (post) => {
+  // Update post with fallback image
+  if (post.image_url === fallbackImageUrl) return;
+  
   instagramStore.updatePost(post.id, { ...post, image_url: fallbackImageUrl });
 };
 

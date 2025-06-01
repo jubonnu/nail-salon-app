@@ -26,15 +26,14 @@ const validatePost = (data) => {
 export const useInstagramStore = defineStore('instagram', {
   state: () => ({
     posts: [],
-    scheduledPosts: [], 
+    scheduledPosts: [],
     loading: false,
     error: null
   }),
 
   getters: {
     sortedPosts: (state) => {
-      const allPosts = [...state.posts, ...state.scheduledPosts];
-      return allPosts.sort((a, b) => {
+      return [...state.posts, ...state.scheduledPosts].sort((a, b) => {
         return new Date(b.created_at) - new Date(a.created_at);
       });
     }
@@ -44,18 +43,14 @@ export const useInstagramStore = defineStore('instagram', {
     async fetchPosts() {
       this.loading = true;
       try {
-        // Get all posts
         const { data: allPosts, error } = await supabase
           .from('instagram_posts')
           .select('*')
+          .neq('status', 'scheduled')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        
-        // Update state
-        this.posts = allPosts?.filter(post => post.status !== 'scheduled') || [];
-        this.scheduledPosts = allPosts?.filter(post => post.status === 'scheduled') || [];
-        
+        this.posts = allPosts || [];
         return this.posts;
       } catch (error) {
         this.error = error.message;
@@ -91,13 +86,7 @@ export const useInstagramStore = defineStore('instagram', {
     async createPost(data) {
       this.loading = true;
       try {
-        const postData = {
-          image_url: data.image_url,
-          caption: data.caption || '',
-          hashtags: Array.isArray(data.hashtags) ? data.hashtags : [],
-          scheduled_time: data.scheduled_time || null,
-          status: data.status || (data.scheduled_time ? 'scheduled' : 'draft')
-        };
+        const postData = validatePost(data);
 
         const { data: post, error } = await supabase
           .from('instagram_posts')
@@ -107,15 +96,12 @@ export const useInstagramStore = defineStore('instagram', {
 
         if (error) throw error;
 
-        // Update local state
-        this.allPosts.unshift(post);
         if (post.status === 'scheduled') {
           this.scheduledPosts.unshift(post);
         } else {
           this.posts.unshift(post);
         }
 
-        // Return the created post
         return post;
       } catch (error) {
         this.error = error.message;
