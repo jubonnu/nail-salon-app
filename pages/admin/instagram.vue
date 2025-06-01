@@ -17,7 +17,7 @@
     >
       <div v-for="post in instagramPosts" :key="post.id" class="bg-white rounded-lg shadow overflow-hidden">
         <div class="relative aspect-square">
-          <img :src="post.imageUrl" alt="Nail design" class="w-full h-full object-cover" />
+          <img :src="post.image_url" alt="Nail design" class="w-full h-full object-cover" />
           <div class="absolute top-2 right-2">
             <el-tag v-if="post.status === 'scheduled'" type="warning">予約済み</el-tag>
             <el-tag v-else-if="post.status === 'published'" type="success">投稿済み</el-tag>
@@ -26,7 +26,7 @@
         </div>
         
         <div class="p-4">
-          <p class="text-sm text-gray-500 mb-2">{{ post.scheduledDate || '未予約' }}</p>
+          <p class="text-sm text-gray-500 mb-2">{{ post.scheduled_time || '未予約' }}</p>
           <p class="font-medium mb-2 line-clamp-2">{{ post.caption }}</p>
           <div class="flex flex-wrap gap-1 mb-3">
             <el-tag v-for="(tag, index) in post.hashtags" :key="index" size="small" effect="plain">
@@ -58,8 +58,8 @@
       <el-form :model="postForm" label-position="top">
         <div class="mb-4">
           <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-            <div v-if="postForm.imageUrl" class="mb-4">
-              <img :src="postForm.imageUrl" alt="プレビュー" class="max-h-60 mx-auto object-contain" />
+            <div v-if="postForm.image_url" class="mb-4">
+              <img :src="postForm.image_url" alt="プレビュー" class="max-h-60 mx-auto object-contain" />
             </div>
             <el-upload
               action="#"
@@ -67,7 +67,7 @@
               :show-file-list="false"
               :on-change="handleImageChange"
             >
-              <el-button type="primary" plain>{{ postForm.imageUrl ? '画像を変更' : '画像をアップロード' }}</el-button>
+              <el-button type="primary" plain>{{ postForm.image_url ? '画像を変更' : '画像をアップロード' }}</el-button>
               <p class="mt-2 text-sm text-gray-500">ネイルデザインの高品質な画像をアップロードしてください</p>
             </el-upload>
           </div>
@@ -103,7 +103,7 @@
         
         <el-form-item label="投稿予約">
           <el-date-picker
-            v-model="postForm.scheduledDate"
+            v-model="postForm.scheduled_time"
             type="datetime"
             placeholder="日時を選択"
             class="w-full"
@@ -138,10 +138,10 @@ const instagramPosts = computed(() => [...instagramStore.posts, ...instagramStor
 
 // Form model
 const postForm = reactive({
-  imageUrl: '',
+  image_url: '',
   caption: '',
   hashtags: [],
-  scheduledDate: null
+  scheduled_time: null
 });
 
 // Common hashtags for suggestions
@@ -175,7 +175,7 @@ const handleImageChange = (file) => {
   // For demo purposes, we'll use a URL.createObjectURL or a placeholder
   if (file.raw) {
     // Simulate image upload
-    postForm.imageUrl = URL.createObjectURL(file.raw);
+    postForm.image_url = URL.createObjectURL(file.raw);
   }
 };
 
@@ -184,10 +184,10 @@ const editPost = (post) => {
   editingPostId.value = post.id;
   
   // Populate form with post data
-  postForm.imageUrl = post.imageUrl;
+  postForm.image_url = post.image_url;
   postForm.caption = post.caption;
   postForm.hashtags = [...post.hashtags];
-  postForm.scheduledDate = post.scheduledDate;
+  postForm.scheduled_time = post.scheduled_time;
   
   showCreatePostDialog.value = true;
 };
@@ -196,11 +196,11 @@ const savePost = async () => {
   if (editingPost.value) {
     try {
       await instagramStore.updatePost(editingPostId.value, {
-        imageUrl: postForm.imageUrl,
+        image_url: postForm.image_url,
         caption: postForm.caption,
         hashtags: postForm.hashtags,
-        scheduledDate: postForm.scheduledDate,
-        status: postForm.scheduledDate ? 'scheduled' : 'draft'
+        scheduled_time: postForm.scheduled_time,
+        status: postForm.scheduled_time ? 'scheduled' : 'draft'
       });
       ElMessage.success('投稿を更新しました');
     } catch (e) {
@@ -210,11 +210,11 @@ const savePost = async () => {
   } else {
     try {
       await instagramStore.createPost({
-        imageUrl: postForm.imageUrl,
+        image_url: postForm.image_url,
         caption: postForm.caption,
         hashtags: postForm.hashtags,
-        scheduledDate: postForm.scheduledDate,
-        status: postForm.scheduledDate ? 'scheduled' : 'draft'
+        scheduled_time: postForm.scheduled_time,
+        status: postForm.scheduled_time ? 'scheduled' : 'draft'
       });
       ElMessage.success('投稿を作成しました');
     } catch (e) {
@@ -235,7 +235,7 @@ const schedulePost = async (post) => {
     const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await instagramStore.updatePost(post.id, {
       ...post,
-      scheduledDate: tomorrow,
+      scheduled_time: tomorrow,
       status: 'scheduled'
     });
     ElMessage.success('投稿を予約しました');
@@ -248,7 +248,7 @@ const unschedulePost = async (post) => {
   try {
     await instagramStore.updatePost(post.id, {
       ...post,
-      scheduledDate: null,
+      scheduled_time: null,
       status: 'draft'
     });
     ElMessage.success('予約を解除しました');
@@ -258,10 +258,10 @@ const unschedulePost = async (post) => {
 };
 
 const resetPostForm = () => {
-  postForm.imageUrl = '';
+  postForm.image_url = '';
   postForm.caption = '';
   postForm.hashtags = [];
-  postForm.scheduledDate = null;
+  postForm.scheduled_time = null;
 };
 
 onMounted(loadPosts);
