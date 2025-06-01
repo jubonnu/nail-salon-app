@@ -102,6 +102,7 @@ export const useAppointmentStore = defineStore('appointments', {
         'ハンドケア': 3000
       };
       return prices[serviceType] || 0;
+    }
 
     async updateAppointment(id, data) {
       this.loading = true;
