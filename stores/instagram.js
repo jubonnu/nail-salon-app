@@ -79,23 +79,31 @@ export const useInstagramStore = defineStore('instagram', {
     async createPost(data) {
       this.loading = true;
       try {
-        const postData = validatePost(data);
+        // Validate and prepare post data
+        const postData = {
+          image_url: data.image_url,
+          caption: data.caption || '',
+          hashtags: Array.isArray(data.hashtags) ? data.hashtags : [],
+          scheduled_time: data.scheduled_time || null,
+          status: data.scheduled_time ? 'scheduled' : 'draft'
+        };
 
         const { data: post, error } = await supabase
           .from('instagram_posts')
           .insert([postData])
-          .select()
+          .select('*')
           .single();
 
         if (error) throw error;
 
-        // Add to appropriate list
+        // Update local state
         if (post.status === 'scheduled') {
           this.scheduledPosts.unshift(post);
         } else {
           this.posts.unshift(post);
         }
 
+        // Return the created post
         return post;
       } catch (error) {
         this.error = error.message;
