@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { createClient } from '@supabase/supabase-js';
+import dayjs from 'dayjs';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -31,8 +32,8 @@ export const useSalesStore = defineStore('sales', {
     async fetchSummary(period = 'day', date = new Date()) {
       this.loading = true;
       try {
-        const startDate = dayjs(date).startOf(period);
-        const endDate = dayjs(date).endOf(period);
+        const startDate = dayjs(date).startOf(period).toISOString();
+        const endDate = dayjs(date).endOf(period).toISOString();
 
         // Get sales records for the period
         const { data: salesData, error: salesError } = await supabase
@@ -42,24 +43,23 @@ export const useSalesStore = defineStore('sales', {
             customers (name),
             staff (name),
             appointments (service_type)
-          `)
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString())
-          .order('created_at', { ascending: false });
+          `).order('created_at', { ascending: false })
+          .gte('created_at', startDate)
+          .lte('created_at', endDate);
 
         if (salesError) throw salesError;
 
         // Get previous period data for trends
         const prevStartDate = startDate.subtract(1, period);
-        const prevEndDate = endDate.subtract(1, period);
+        const prevEndDate = endDate.subtract(1, period).toISOString();
 
         const { data: prevSalesData } = await supabase
           .from('sales_records')
           .select('amount, customer_id')
           .gte('created_at', prevStartDate.toISOString())
-          .lte('created_at', prevEndDate.toISOString());
+          .lte('created_at', prevEndDate);
 
-        // Calculate summary metrics
+        // Calculate metrics
         const totalSales = salesData?.reduce((sum, record) => sum + record.amount, 0) || 0;
         const prevTotalSales = prevSalesData?.reduce((sum, record) => sum + record.amount, 0) || 0;
         const salesTrend = prevTotalSales ? Math.round((totalSales - prevTotalSales) / prevTotalSales * 100) : 0;
