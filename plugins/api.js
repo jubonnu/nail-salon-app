@@ -2,126 +2,242 @@ export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig();
   
   const api = {
-    // Authentication
-    async login(email, password) {
-      try {
-        const response = await fetch(`${config.public.apiBaseUrl}/auth/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, password }),
-        });
-        
-        if (!response.ok) throw new Error('Authentication failed');
-        return await response.json();
-      } catch (error) {
-        console.error('Login error:', error);
-        throw error;
-      }
+    // Sales API
+    sales: {
+      async getSummary(period = 'day', date = new Date()) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/sales/summary?period=${period}&date=${date.toISOString()}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to fetch sales summary');
+        return response.json();
+      },
+      
+      async getRecords() {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/sales`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to fetch sales records');
+        return response.json();
+      },
+      
+      async create(data) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/sales`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(data),
+          }
+        );
+        if (!response.ok) throw new Error('Failed to create sales record');
+        return response.json();
+      },
+      
+      async update(id, data) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/sales/${id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(data),
+          }
+        );
+        if (!response.ok) throw new Error('Failed to update sales record');
+        return response.json();
+      },
+      
+      async delete(id) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/sales/${id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to delete sales record');
+        return response.json();
+      },
     },
     
-    // Counseling Sheets
-    async getCounselingSheets(status = null) {
-      try {
-        let url = `${config.public.apiBaseUrl}/counseling-sheets`;
-        if (status) url += `?status=${status}`;
-        
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        
-        if (!response.ok) throw new Error('Failed to fetch counseling sheets');
-        return await response.json();
-      } catch (error) {
-        console.error('Get counseling sheets error:', error);
-        throw error;
-      }
-    },
-    
-    async createCounselingSheet(data) {
-      try {
-        const response = await fetch(`${config.public.apiBaseUrl}/counseling-sheets`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify(data),
-        });
-        
-        if (!response.ok) throw new Error('Failed to create counseling sheet');
-        return await response.json();
-      } catch (error) {
-        console.error('Create counseling sheet error:', error);
-        throw error;
-      }
-    },
-    
-    // Customers
-    async getCustomers(params = {}) {
-      try {
-        const queryParams = new URLSearchParams();
-        Object.entries(params).forEach(([key, value]) => {
-          if (value) queryParams.append(key, value);
-        });
-        
-        const url = `${config.public.apiBaseUrl}/customers?${queryParams}`;
-        
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        
-        if (!response.ok) throw new Error('Failed to fetch customers');
-        return await response.json();
-      } catch (error) {
-        console.error('Get customers error:', error);
-        throw error;
-      }
-    },
-    
-    // Sales data
-    async getSalesData(dateRange) {
-      try {
-        const { start, end } = dateRange;
-        const url = `${config.public.apiBaseUrl}/sales?start=${start}&end=${end}`;
-        
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        
-        if (!response.ok) throw new Error('Failed to fetch sales data');
-        return await response.json();
-      } catch (error) {
-        console.error('Get sales data error:', error);
-        throw error;
-      }
-    },
-    
-    // Instagram integration
-    async createInstagramPost(postData) {
-      try {
-        const response = await fetch(`${config.public.apiBaseUrl}/instagram/posts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify(postData),
-        });
-        
+    // Instagram API
+    instagram: {
+      async getPosts() {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/instagram`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to fetch Instagram posts');
+        return response.json();
+      },
+      
+      async getScheduledPosts() {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/instagram/scheduled`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to fetch scheduled posts');
+        return response.json();
+      },
+      
+      async createPost(data) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/instagram`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(data),
+          }
+        );
         if (!response.ok) throw new Error('Failed to create Instagram post');
-        return await response.json();
-      } catch (error) {
-        console.error('Create Instagram post error:', error);
-        throw error;
-      }
+        return response.json();
+      },
+      
+      async updatePost(id, data) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/instagram/${id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(data),
+          }
+        );
+        if (!response.ok) throw new Error('Failed to update Instagram post');
+        return response.json();
+      },
+      
+      async deletePost(id) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/instagram/${id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to delete Instagram post');
+        return response.json();
+      },
+    },
+    
+    // Staff API
+    staff: {
+      async getAll() {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/staff`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to fetch staff members');
+        return response.json();
+      },
+      
+      async getSchedule(staffId, date) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/staff/schedule?staffId=${staffId}&date=${date}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to fetch staff schedule');
+        return response.json();
+      },
+      
+      async getPerformance(staffId, startDate, endDate) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/staff/performance?staffId=${staffId}&startDate=${startDate}&endDate=${endDate}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to fetch staff performance');
+        return response.json();
+      },
+      
+      async create(data) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/staff`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(data),
+          }
+        );
+        if (!response.ok) throw new Error('Failed to create staff member');
+        return response.json();
+      },
+      
+      async update(id, data) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/staff/${id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(data),
+          }
+        );
+        if (!response.ok) throw new Error('Failed to update staff member');
+        return response.json();
+      },
+      
+      async delete(id) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/staff/${id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to delete staff member');
+        return response.json();
+      },
     },
   };
   
