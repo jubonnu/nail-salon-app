@@ -195,17 +195,17 @@ const handleImageChange = async (file) => {
       const fileName = `${Date.now()}.${fileExt}`;
       
       // Upload file to Supabase Storage
-      const { data, error } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('instagram')
         .upload(fileName, file.raw, {
           cacheControl: '3600',
           upsert: false
         });
 
-      if (error) throw error;
+      if (uploadError) throw uploadError;
 
       // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl } } = await supabase.storage
         .from('instagram')
         .getPublicUrl(fileName);
 
