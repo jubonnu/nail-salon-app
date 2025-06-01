@@ -31,6 +31,9 @@ export const useSalesStore = defineStore('sales', {
     async fetchSummary(period = 'day', date = new Date()) {
       this.loading = true;
       try {
+        const startDate = dayjs(date).startOf(period);
+        const endDate = dayjs(date).endOf(period);
+
         // Get sales records for the period
         const { data: salesData, error: salesError } = await supabase
           .from('sales_records')
@@ -40,24 +43,44 @@ export const useSalesStore = defineStore('sales', {
             staff (name),
             appointments (service_type)
           `)
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString())
           .order('created_at', { ascending: false });
 
         if (salesError) throw salesError;
 
+        // Get previous period data for trends
+        const prevStartDate = startDate.subtract(1, period);
+        const prevEndDate = endDate.subtract(1, period);
+
+        const { data: prevSalesData } = await supabase
+          .from('sales_records')
+          .select('amount, customer_id')
+          .gte('created_at', prevStartDate.toISOString())
+          .lte('created_at', prevEndDate.toISOString());
+
         // Calculate summary metrics
         const totalSales = salesData?.reduce((sum, record) => sum + record.amount, 0) || 0;
+        const prevTotalSales = prevSalesData?.reduce((sum, record) => sum + record.amount, 0) || 0;
+        const salesTrend = prevTotalSales ? Math.round((totalSales - prevTotalSales) / prevTotalSales * 100) : 0;
+
         const customerCount = new Set(salesData?.map(record => record.customer_id)).size;
+        const prevCustomerCount = new Set(prevSalesData?.map(record => record.customer_id)).size;
+        const customerTrend = prevCustomerCount ? Math.round((customerCount - prevCustomerCount) / prevCustomerCount * 100) : 0;
+
         const averageTransaction = customerCount ? Math.round(totalSales / customerCount) : 0;
+        const prevAverageTransaction = prevCustomerCount ? Math.round(prevTotalSales / prevCustomerCount) : 0;
+        const avgTransactionTrend = prevAverageTransaction ? Math.round((averageTransaction - prevAverageTransaction) / prevAverageTransaction * 100) : 0;
 
         this.summary = {
           totalSales,
-          salesTrend: 5, // Example trend
+          salesTrend,
           targetProgress: 75,
           customerCount,
-          customerTrend: 8,
+          customerTrend,
           customerTargetProgress: 80,
           averageTransaction,
-          avgTransactionTrend: 3,
+          avgTransactionTrend,
           avgTransactionTargetProgress: 85,
           newCustomers: Math.round(customerCount * 0.3), // Example calculation
           newCustomerTrend: 10,

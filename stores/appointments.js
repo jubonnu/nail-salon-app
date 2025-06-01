@@ -47,6 +47,7 @@ export const useAppointmentStore = defineStore('appointments', {
     async createAppointment(data) {
       this.loading = true;
       try {
+        // Create appointment
         const { data: newAppointment, error } = await supabase
           .from('appointments')
           .insert([data])
@@ -65,6 +66,23 @@ export const useAppointmentStore = defineStore('appointments', {
           .single();
 
         if (error) throw error;
+
+        // Create corresponding sales record
+        const salesData = {
+          appointment_id: newAppointment.id,
+          customer_id: newAppointment.customer_id,
+          staff_id: newAppointment.staff_id,
+          amount: this.getServiceAmount(newAppointment.service_type),
+          payment_method: 'Cash', // デフォルト値
+          status: 'Pending'
+        };
+
+        const { error: salesError } = await supabase
+          .from('sales_records')
+          .insert([salesData]);
+
+        if (salesError) throw salesError;
+
         this.appointments.push(newAppointment);
         return newAppointment;
       } catch (error) {
@@ -74,6 +92,16 @@ export const useAppointmentStore = defineStore('appointments', {
         this.loading = false;
       }
     },
+
+    getServiceAmount(serviceType) {
+      // サービスタイプに応じた金額を返す
+      const prices = {
+        'ジェルネイル': 8000,
+        'ネイルケア': 5000,
+        'ネイルアート': 10000,
+        'ハンドケア': 3000
+      };
+      return prices[serviceType] || 0;
 
     async updateAppointment(id, data) {
       this.loading = true;
