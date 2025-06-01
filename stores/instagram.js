@@ -33,8 +33,11 @@ export const useInstagramStore = defineStore('instagram', {
 
   getters: {
     sortedPosts: (state) => {
-      return [...state.posts, ...state.scheduledPosts].sort((a, b) => {
-        return new Date(b.created_at) - new Date(a.created_at);
+      const allPosts = [...state.posts, ...state.scheduledPosts];
+      return allPosts.sort((a, b) => {
+        const dateA = a.scheduled_time ? new Date(a.scheduled_time) : new Date(a.created_at);
+        const dateB = b.scheduled_time ? new Date(b.scheduled_time) : new Date(b.created_at);
+        return dateB - dateA;
       });
     }
   },
@@ -45,8 +48,8 @@ export const useInstagramStore = defineStore('instagram', {
       try {
         const { data: allPosts, error } = await supabase
           .from('instagram_posts')
-          .select('*')
-          .neq('status', 'scheduled')
+          .select()
+          .in('status', ['draft', 'published'])
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -63,13 +66,12 @@ export const useInstagramStore = defineStore('instagram', {
     async fetchScheduledPosts() {
       this.loading = true;
       try {
-        const now = dayjs();
         // Get scheduled posts from today onwards
         const { data, error } = await supabase
           .from('instagram_posts')
-          .select('*')
+          .select()
           .eq('status', 'scheduled')
-          .gte('scheduled_time', now.startOf('day').toISOString())
+          .gte('scheduled_time', dayjs().startOf('day').toISOString())
           .order('scheduled_time');
 
         if (error) throw error;
@@ -158,10 +160,18 @@ export const useInstagramStore = defineStore('instagram', {
     },
 
     async refreshPosts() {
-      await Promise.all([
-        this.fetchPosts(),
-        this.fetchScheduledPosts()
-      ]);
+      this.loading = true;
+      try {
+        await Promise.all([
+          this.fetchPosts(),
+          this.fetchScheduledPosts()
+        ]);
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     }
   }
 });
