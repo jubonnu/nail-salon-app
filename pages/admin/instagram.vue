@@ -136,8 +136,8 @@ import { useInstagramStore } from '~/stores/instagram';
 const instagramStore = useInstagramStore();
 const showCreatePostDialog = ref(false);
 const editingPost = ref(false);
-const editingPostId = ref(null);
-const fallbackImageUrl = 'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2.jpg';
+const editingPostId = ref(null); 
+const fallbackImageUrl = 'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg';
 
 const loading = computed(() => instagramStore.loading);
 const error = computed(() => instagramStore.error);
@@ -183,7 +183,9 @@ const loadPosts = async () => {
 
 const handleImageChange = (file) => {
   if (file.raw) {
-    postForm.image_url = URL.createObjectURL(file.raw);
+    // Use a sample image URL from Pexels for demonstration
+    // In production, you would upload the file to a storage service
+    postForm.image_url = 'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg';
   }
 };
 
@@ -202,6 +204,11 @@ const editPost = (post) => {
 };
 
 const savePost = async () => {
+  if (!postForm.image_url) {
+    ElMessage.error('画像は必須です');
+    return;
+  }
+
   if (editingPost.value) {
     try {
       await instagramStore.updatePost(editingPostId.value, {
@@ -210,6 +217,7 @@ const savePost = async () => {
         hashtags: postForm.hashtags,
         scheduled_time: postForm.scheduled_time,
         status: postForm.scheduled_time ? 'scheduled' : 'draft'
+        status: 'draft'
       });
       ElMessage.success('投稿を更新しました');
     } catch (e) {
@@ -224,6 +232,7 @@ const savePost = async () => {
         hashtags: postForm.hashtags,
         scheduled_time: postForm.scheduled_time,
         status: postForm.scheduled_time ? 'scheduled' : 'draft'
+        status: 'draft'
       });
       ElMessage.success('投稿を作成しました');
     } catch (e) {
