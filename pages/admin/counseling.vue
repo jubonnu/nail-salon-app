@@ -144,7 +144,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCounselingStore } from '~/stores/counseling';
 
@@ -179,7 +179,7 @@ const viewSheet = (sheet) => {
   showSheetDrawer.value = true;
 };
 
-const processSheet = (sheet) => {
+const processSheet = async (sheet) => {
   if (sheet.status === 'New') {
     try {
       await counselingStore.processSheet(sheet.id);
