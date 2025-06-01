@@ -68,12 +68,11 @@
               <div
                 v-for="reservation in getReservationsForDate(date)"
                 :key="reservation.id"
-                class="text-xs py-2 px-3 rounded cursor-pointer mb-1 shadow-sm"
+                class="text-xs p-2 rounded cursor-pointer mb-1 shadow-sm hover:shadow-md transition-shadow"
                 :class="getReservationClass(reservation)"
                 @click="viewReservation(reservation)"
               >
-                <div class="font-medium">{{ dayjs(reservation.start_time).format('HH:mm') }}</div>
-                <div class="truncate">{{ reservation.customers?.name }}</div>
+                <div class="truncate font-medium">{{ reservation.customers?.name }}</div>
               </div>
             </div>
           </div>
@@ -472,16 +471,18 @@ onMounted(async () => {
   min-height: 600px;
 }
 
+/* カレンダーセルのスタイリング */
 .calendar-grid :deep(.el-button--small) {
   padding: 4px;
   min-height: 24px;
 }
 
-/* カレンダーセルの高さを固定 */
+/* カレンダーセルの高さと余白の調整 */
 .calendar-grid .grid-cols-7 > div {
   min-height: 120px;
   max-height: 160px;
   overflow-y: auto;
+  padding: 8px;
 }
 
 /* スクロールバーのスタイリング */
