@@ -217,7 +217,6 @@ const savePost = async () => {
         hashtags: postForm.hashtags,
         scheduled_time: postForm.scheduled_time,
         status: postForm.scheduled_time ? 'scheduled' : 'draft'
-        status: 'draft'
       });
       ElMessage.success('投稿を更新しました');
     } catch (e) {
@@ -232,7 +231,6 @@ const savePost = async () => {
         hashtags: postForm.hashtags,
         scheduled_time: postForm.scheduled_time,
         status: postForm.scheduled_time ? 'scheduled' : 'draft'
-        status: 'draft'
       });
       ElMessage.success('投稿を作成しました');
     } catch (e) {
