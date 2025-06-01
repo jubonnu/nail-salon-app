@@ -2,6 +2,68 @@ export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig();
   
   const api = {
+    // Customers API
+    customers: {
+      async getAll() {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/customers`,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to fetch customers');
+        return response.json();
+      },
+      
+      async create(data) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/customers`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(data),
+          }
+        );
+        if (!response.ok) throw new Error('Failed to create customer');
+        return response.json();
+      },
+      
+      async update(id, data) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/customers/${id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify(data),
+          }
+        );
+        if (!response.ok) throw new Error('Failed to update customer');
+        return response.json();
+      },
+      
+      async delete(id) {
+        const response = await fetch(
+          `${config.public.apiBaseUrl}/functions/v1/customers/${id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        if (!response.ok) throw new Error('Failed to delete customer');
+        return response.json();
+      },
+    },
+    
     // Sales API
     sales: {
       async getSummary(period = 'day', date = new Date()) {

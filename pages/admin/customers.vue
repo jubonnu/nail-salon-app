@@ -194,7 +194,6 @@ import { ref, computed, reactive } from 'vue';
 const searchQuery = ref('');
 const filterVisitCount = ref('');
 const filterService = ref('');
-const loading = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const totalCustomers = ref(85);
@@ -243,9 +242,20 @@ const customerRules = {
   ]
 };
 
+const loading = computed(() => customerStore.loading);
+const error = computed(() => customerStore.error);
+const customers = computed(() => customerStore.customers);
+
 // Computed properties
 const filteredCustomers = computed(() => {
-  return customers.value;
+  return customers.value.filter(customer => {
+    const matchesSearch = !searchQuery.value || 
+      customer.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      (customer.email && customer.email.toLowerCase().includes(searchQuery.value.toLowerCase())) ||
+      (customer.phone && customer.phone.includes(searchQuery.value));
+    
+    return matchesSearch;
+  });
 });
 
 // Methods
@@ -290,25 +300,15 @@ const addCustomer = async () => {
   
   await customerFormRef.value.validate(async (valid) => {
     if (valid) {
-      addingCustomer.value = true;
-      
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Add to customers list with fake ID and defaults
-        const newId = customers.value.length + 1;
-        customers.value.unshift({
-          id: newId,
+        await customerStore.createCustomer({
           name: newCustomer.name,
-          phone: newCustomer.phone,
           email: newCustomer.email,
-          preferredService: newCustomer.preferredService,
-          notes: newCustomer.notes,
-          visitCount: 0,
-          lastVisit: '未来店',
-          joinDate: new Date().toISOString().split('T')[0]
+          phone: newCustomer.phone,
+          notes: newCustomer.notes
         });
+        
+        ElMessage.success('顧客を登録しました');
         
         // Reset form and close dialog
         Object.keys(newCustomer).forEach(key => {
@@ -318,12 +318,22 @@ const addCustomer = async () => {
         showAddCustomerDialog.value = false;
       } catch (error) {
         console.error('顧客登録エラー:', error);
+        ElMessage.error('顧客の登録に失敗しました');
       } finally {
         addingCustomer.value = false;
       }
     }
   });
 };
+
+// Load initial data
+onMounted(async () => {
+  try {
+    await customerStore.fetchCustomers();
+  } catch (error) {
+    ElMessage.error('顧客データの取得に失敗しました');
+  }
+});
 
 const createCounselingSheet = (customer) => {
   // Would navigate to counseling form in full implementation
