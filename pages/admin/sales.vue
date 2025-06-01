@@ -2,7 +2,7 @@
   <div>
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold">売上・レポート</h1>
-      <div class="flex gap-2">
+      <div class="flex gap-2" v-loading="loading">
         <el-button @click="exportReport" icon="DownloadOutlined">
           レポート出力
         </el-button>
@@ -40,56 +40,89 @@
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-sm font-medium text-gray-500 mb-1">総売上</h3>
         <div class="flex items-end justify-between">
-          <span class="text-2xl font-bold">¥384,500</span>
-          <span class="text-sm text-success">+12.5% ↑</span>
+          <span class="text-2xl font-bold">¥{{ summary.totalSales?.toLocaleString() || 0 }}</span>
+          <span class="text-sm" :class="summary.salesTrend >= 0 ? 'text-success' : 'text-error'">
+            {{ summary.salesTrend >= 0 ? '+' : '' }}{{ summary.salesTrend }}% 
+            {{ summary.salesTrend >= 0 ? '↑' : '↓' }}
+          </span>
         </div>
         <div class="mt-2">
           <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
-            <div class="h-full bg-primary" style="width: 75%"></div>
+            <div 
+              class="h-full bg-primary" 
+              :style="{ width: `${summary.targetProgress || 0}%` }"
+            ></div>
           </div>
-          <p class="text-xs text-gray-500 mt-1">月間目標の75%達成</p>
+          <p class="text-xs text-gray-500 mt-1">
+            月間目標の{{ summary.targetProgress || 0 }}%達成
+          </p>
         </div>
       </div>
       
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-sm font-medium text-gray-500 mb-1">来店客数</h3>
         <div class="flex items-end justify-between">
-          <span class="text-2xl font-bold">142</span>
-          <span class="text-sm text-success">+8.3% ↑</span>
+          <span class="text-2xl font-bold">{{ summary.customerCount || 0 }}</span>
+          <span class="text-sm" :class="summary.customerTrend >= 0 ? 'text-success' : 'text-error'">
+            {{ summary.customerTrend >= 0 ? '+' : '' }}{{ summary.customerTrend }}% 
+            {{ summary.customerTrend >= 0 ? '↑' : '↓' }}
+          </span>
         </div>
         <div class="mt-2">
           <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
-            <div class="h-full bg-primary" style="width: 68%"></div>
+            <div 
+              class="h-full bg-primary" 
+              :style="{ width: `${summary.customerTargetProgress || 0}%` }"
+            ></div>
           </div>
-          <p class="text-xs text-gray-500 mt-1">月間目標の68%達成</p>
+          <p class="text-xs text-gray-500 mt-1">
+            月間目標の{{ summary.customerTargetProgress || 0 }}%達成
+          </p>
         </div>
       </div>
       
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-sm font-medium text-gray-500 mb-1">平均客単価</h3>
         <div class="flex items-end justify-between">
-          <span class="text-2xl font-bold">¥7,250</span>
-          <span class="text-sm text-success">+3.2% ↑</span>
+          <span class="text-2xl font-bold">¥{{ summary.averageTransaction?.toLocaleString() || 0 }}</span>
+          <span class="text-sm" :class="summary.avgTransactionTrend >= 0 ? 'text-success' : 'text-error'">
+            {{ summary.avgTransactionTrend >= 0 ? '+' : '' }}{{ summary.avgTransactionTrend }}% 
+            {{ summary.avgTransactionTrend >= 0 ? '↑' : '↓' }}
+          </span>
         </div>
         <div class="mt-2">
           <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
-            <div class="h-full bg-primary" style="width: 92%"></div>
+            <div 
+              class="h-full bg-primary" 
+              :style="{ width: `${summary.avgTransactionTargetProgress || 0}%` }"
+            ></div>
           </div>
-          <p class="text-xs text-gray-500 mt-1">目標単価の92%達成</p>
+          <p class="text-xs text-gray-500 mt-1">
+            目標単価の{{ summary.avgTransactionTargetProgress || 0 }}%達成
+          </p>
         </div>
       </div>
       
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-sm font-medium text-gray-500 mb-1">新規顧客数</h3>
         <div class="flex items-end justify-between">
-          <span class="text-2xl font-bold">28</span>
-          <span class="text-sm text-error">-5.2% ↓</span>
+          <span class="text-2xl font-bold">{{ summary.newCustomers || 0 }}</span>
+          <span class="text-sm" :class="summary.newCustomerTrend >= 0 ? 'text-success' : 'text-error'">
+            {{ summary.newCustomerTrend >= 0 ? '+' : '' }}{{ summary.newCustomerTrend }}% 
+            {{ summary.newCustomerTrend >= 0 ? '↑' : '↓' }}
+          </span>
         </div>
         <div class="mt-2">
           <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
-            <div class="h-full bg-warning" style="width: 56%"></div>
+            <div 
+              class="h-full" 
+              :class="summary.newCustomerTargetProgress >= 70 ? 'bg-primary' : 'bg-warning'"
+              :style="{ width: `${summary.newCustomerTargetProgress || 0}%` }"
+            ></div>
           </div>
-          <p class="text-xs text-gray-500 mt-1">月間目標の56%達成</p>
+          <p class="text-xs text-gray-500 mt-1">
+            月間目標の{{ summary.newCustomerTargetProgress || 0 }}%達成
+          </p>
         </div>
       </div>
     </div>
@@ -153,14 +186,16 @@
       
       <el-table :data="recentSales" style="width: 100%">
         <el-table-column prop="date" label="日時" width="180" />
-        <el-table-column prop="customer" label="お客様名" />
-        <el-table-column prop="service" label="施術内容" />
-        <el-table-column prop="staff" label="担当スタッフ" />
+        <el-table-column prop="customers.name" label="お客様名" />
+        <el-table-column prop="appointments.service_type" label="施術内容" />
+        <el-table-column prop="staff.name" label="担当スタッフ" />
         <el-table-column prop="amount" label="金額" />
         <el-table-column prop="paymentMethod" label="支払方法" />
         <el-table-column fixed="right" label="操作" width="120">
           <template #default>
-            <el-button link type="primary" size="small">詳細</el-button>
+            <el-button link type="primary" size="small" @click="viewSalesDetail">
+              詳細
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -169,80 +204,33 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useSalesStore } from '~/stores/sales';
 
-// State variables
-const dateRangeType = ref('month');
-const customDateRange = ref(null);
-const chartType = ref('daily');
+const salesStore = useSalesStore();
+const selectedPeriod = ref('this-week');
 
-// サンプルデータ
-const topServices = ref([
-  { service: 'ジェルネイルアート', revenue: '¥158,400', customers: 48, trend: 12.5 },
-  { service: 'ネイルケア', revenue: '¥86,200', customers: 52, trend: 5.8 },
-  { service: 'ネイルケア＆補修', revenue: '¥64,800', customers: 36, trend: -2.3 },
-  { service: 'ジェル延長', revenue: '¥48,600', customers: 18, trend: 8.7 },
-  { service: 'フレンチネイル', revenue: '¥26,500', customers: 15, trend: 3.2 }
-]);
+const loading = computed(() => salesStore.loading);
+const error = computed(() => salesStore.error);
+const summary = computed(() => salesStore.summary || {});
+const recentSales = computed(() => salesStore.records.slice(0, 5));
 
-const recentSales = ref([
-  { date: '2024-04-03 14:30', customer: '田中 優子', service: 'ジェルネイルアート', staff: '山田 愛子', amount: '¥8,500', paymentMethod: 'クレジットカード' },
-  { date: '2024-04-03 13:15', customer: '鈴木 明', service: 'ネイルケア', staff: '加藤 芽衣', amount: '¥4,800', paymentMethod: '現金' },
-  { date: '2024-04-03 11:45', customer: '渡辺 美緒', service: 'ネイルケア＆補修', staff: '山田 愛子', amount: '¥5,200', paymentMethod: 'クレジットカード' },
-  { date: '2024-04-03 10:30', customer: '佐藤 花子', service: 'フレンチネイル', staff: '伊藤 由美', amount: '¥6,500', paymentMethod: 'モバイル決済' },
-  { date: '2024-04-02 16:00', customer: '山本 恵子', service: 'ジェル延長', staff: '加藤 芽衣', amount: '¥9,800', paymentMethod: 'クレジットカード' }
-]);
-
-// メソッド
-const updateDateRange = () => {
-  if (dateRangeType.value !== 'custom') {
-    // 選択に基づいて期間を設定
-    const today = new Date();
-    
-    switch (dateRangeType.value) {
-      case 'today':
-        customDateRange.value = [today, today];
-        break;
-      case 'week':
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay());
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        customDateRange.value = [startOfWeek, endOfWeek];
-        break;
-      case 'month':
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        customDateRange.value = [startOfMonth, endOfMonth];
-        break;
-      case 'year':
-        const startOfYear = new Date(today.getFullYear(), 0, 1);
-        const endOfYear = new Date(today.getFullYear(), 11, 31);
-        customDateRange.value = [startOfYear, endOfYear];
-        break;
-    }
-    
-    loadSalesData();
+const loadData = async () => {
+  try {
+    await Promise.all([
+      salesStore.fetchSummary(selectedPeriod.value),
+      salesStore.fetchRecords()
+    ]);
+  } catch (e) {
+    ElMessage.error('データの取得に失敗しました');
   }
 };
 
-const loadSalesData = () => {
-  // 期間に基づいてデータを取得
-  console.log('期間のデータを読み込み:', customDateRange.value);
-  
-  // サンプルデータを使用
+const handlePeriodChange = async () => {
+  await salesStore.fetchSummary(selectedPeriod.value);
 };
 
-const exportReport = () => {
-  // レポートファイルを生成してダウンロード
-  console.log('レポート出力...');
-};
+onMounted(loadData);
 
-const generateCustomReport = () => {
-  // カスタムレポート設定ダイアログを表示
-  console.log('カスタムレポート生成...');
-};
-
-// 初期データの読み込み
-updateDateRange();
+watch(selectedPeriod, handlePeriodChange);
 </script>
