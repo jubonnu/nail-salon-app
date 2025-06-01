@@ -12,6 +12,7 @@
   "dependencies": {
     "nuxt": "^3.13.0",
     "@supabase/supabase-js": "^2.39.8",
+    "dayjs": "^1.11.10",
     "@element-plus/nuxt": "^1.0.7",
     "@pinia/nuxt": "^0.5.1",
     "element-plus": "^2.5.6",
