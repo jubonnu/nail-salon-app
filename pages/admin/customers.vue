@@ -188,7 +188,11 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue';
+import { ref, computed, reactive, onMounted } from 'vue';
+import { ElMessage } from 'element-plus';
+import { useCustomerStore } from '~/stores/customers';
+
+const customerStore = useCustomerStore();
 
 // State variables
 const searchQuery = ref('');
@@ -202,15 +206,6 @@ const showCustomerDrawer = ref(false);
 const selectedCustomer = ref(null);
 const addingCustomer = ref(false);
 const customerFormRef = ref(null);
-
-// Sample customer data
-const customers = ref([
-  { id: 1, name: '田中 優子', phone: '090-1234-5678', email: 'tanaka.yuki@example.com', visitCount: 8, lastVisit: '2024-04-02', preferredService: 'ジェルネイル', joinDate: '2023-05-15', notes: 'ピンクやホワイトのデザインを好む。一部の接着剤にアレルギーあり。' },
-  { id: 2, name: '鈴木 明', phone: '080-8765-4321', email: 'suzuki.akira@example.com', visitCount: 3, lastVisit: '2024-03-25', preferredService: 'ネイルケア', joinDate: '2023-09-10', notes: '45分以内の施術を希望。' },
-  { id: 3, name: '渡辺 美緒', phone: '070-2468-1357', email: 'watanabe.mio@example.com', visitCount: 12, lastVisit: '2024-04-01', preferredService: 'ネイルアート', joinDate: '2023-02-20', notes: '細かいネイルアートを好む。特別な機会に来店。' },
-  { id: 4, name: '佐藤 花子', phone: '090-1357-2468', email: 'sato.hanako@example.com', visitCount: 1, lastVisit: '2024-03-18', preferredService: 'ハンドケア', joinDate: '2024-03-18', notes: '初回来店。爪が弱いため補強が必要。' },
-  { id: 5, name: '山本 恵子', phone: '080-9876-5432', email: 'yamamoto.keiko@example.com', visitCount: 5, lastVisit: '2024-03-30', preferredService: 'ジェルネイル', joinDate: '2023-11-05', notes: 'ナチュラルな仕上がりを好む。キューティクルが敏感。' }
-]);
 
 // Recent visits for selected customer
 const recentVisits = ref([
