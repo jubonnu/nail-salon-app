@@ -45,10 +45,22 @@
       v-loading="loading"
       empty-text="カウンセリングシートが見つかりません"
     >
-      <el-table-column prop="customerName" label="お客様名" min-width="150" />
-      <el-table-column prop="phone" label="電話番号" min-width="130" />
-      <el-table-column prop="serviceType" label="施術内容" min-width="120" />
-      <el-table-column prop="submissionDate" label="提出日時" min-width="180" sortable />
+      <el-table-column prop="customerName" label="お客様名" min-width="150">
+        <template #default="scope">
+          {{ scope.row.customers?.name }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="customers.phone" label="電話番号" min-width="130">
+        <template #default="scope">
+          {{ scope.row.customers?.phone }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="service_type" label="施術内容" min-width="120" />
+      <el-table-column prop="submissionDate" label="提出日時" min-width="180" sortable>
+        <template #default="scope">
+          {{ formatDate(scope.row.created_at) }}
+        </template>
+      </el-table-column>
       <el-table-column fixed="right" label="操作" width="200">
         <template #default="scope">
           <el-button link type="primary" @click="$emit('view', scope.row)">詳細</el-button>
@@ -89,7 +101,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue'
+import dayjs from 'dayjs'
 
 const props = defineProps({
   sheets: {
@@ -119,6 +132,10 @@ const filteredSheets = computed(() => {
 const totalSheets = computed(() => {
   return filteredSheets.value.length;
 });
+
+const formatDate = (date) => {
+  return dayjs(date).format('YYYY/MM/DD HH:mm');
+};
 
 // Methods
 const filterSheets = () => {

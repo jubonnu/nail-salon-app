@@ -50,8 +50,8 @@
       <div class="p-4" v-if="selectedSheet">
         <div class="mb-6 flex justify-between items-center">
           <div>
-            <h3 class="text-xl font-bold">{{ selectedSheet.customerName }}</h3>
-            <p class="text-gray-500">提出日時: {{ selectedSheet.submissionDate }}</p>
+            <h3 class="text-xl font-bold">{{ selectedSheet.customers?.name }}</h3>
+            <p class="text-gray-500">提出日時: {{ formatDate(selectedSheet.created_at) }}</p>
           </div>
           <el-tag :type="getStatusType(selectedSheet.status)">{{ getStatusLabel(selectedSheet.status) }}</el-tag>
         </div>
@@ -61,11 +61,11 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p class="text-sm text-gray-500">電話番号</p>
-              <p>{{ selectedSheet.phone }}</p>
+              <p>{{ selectedSheet.customers?.phone }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">メールアドレス</p>
-              <p>{{ selectedSheet.email || '未登録' }}</p>
+              <p>{{ selectedSheet.customers?.email || '未登録' }}</p>
             </div>
           </div>
         </div>
@@ -75,15 +75,15 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <p class="text-sm text-gray-500">施術内容</p>
-              <p>{{ selectedSheet.serviceType }}</p>
+              <p>{{ selectedSheet.service_type }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">長さ</p>
-              <p class="capitalize">{{ getNailLengthLabel(selectedSheet.nailLength) }}</p>
+              <p class="capitalize">{{ getNailLengthLabel(selectedSheet.nail_length) }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">形</p>
-              <p class="capitalize">{{ getNailShapeLabel(selectedSheet.nailShape) }}</p>
+              <p class="capitalize">{{ getNailShapeLabel(selectedSheet.nail_shape) }}</p>
             </div>
           </div>
         </div>
@@ -92,17 +92,17 @@
           <h4 class="font-medium mb-3">健康状態</h4>
           <div class="mb-4">
             <p class="text-sm text-gray-500">アレルギー</p>
-            <p>{{ selectedSheet.hasAllergies ? 'あり' : 'なし' }}</p>
-            <p v-if="selectedSheet.hasAllergies" class="mt-2 text-sm bg-white p-2 rounded">
-              {{ selectedSheet.allergiesDetails }}
+            <p>{{ selectedSheet.has_allergies ? 'あり' : 'なし' }}</p>
+            <p v-if="selectedSheet.has_allergies" class="mt-2 text-sm bg-white p-2 rounded">
+              {{ selectedSheet.allergies_details }}
             </p>
           </div>
           
           <div>
             <p class="text-sm text-gray-500">既往歴</p>
-            <p>{{ selectedSheet.hasMedicalConditions ? 'あり' : 'なし' }}</p>
-            <p v-if="selectedSheet.hasMedicalConditions" class="mt-2 text-sm bg-white p-2 rounded">
-              {{ selectedSheet.medicalDetails }}
+            <p>{{ selectedSheet.has_medical_conditions ? 'あり' : 'なし' }}</p>
+            <p v-if="selectedSheet.has_medical_conditions" class="mt-2 text-sm bg-white p-2 rounded">
+              {{ selectedSheet.medical_details }}
             </p>
           </div>
         </div>
@@ -289,7 +289,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue'
+import dayjs from 'dayjs'
 import { useCounselingStore } from '~/stores/counseling';
 import { useCustomerStore } from '~/stores/customers';
 
