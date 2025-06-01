@@ -1,8 +1,27 @@
 import { defineStore } from 'pinia';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 export const useSalesStore = defineStore('sales', {
   state: () => ({
-    summary: null,
+    summary: {
+      totalSales: 0,
+      salesTrend: 0,
+      targetProgress: 0,
+      customerCount: 0,
+      customerTrend: 0,
+      customerTargetProgress: 0,
+      averageTransaction: 0,
+      avgTransactionTrend: 0,
+      avgTransactionTargetProgress: 0,
+      newCustomers: 0,
+      newCustomerTrend: 0,
+      newCustomerTargetProgress: 0
+    },
     records: [],
     loading: false,
     error: null
@@ -12,10 +31,41 @@ export const useSalesStore = defineStore('sales', {
     async fetchSummary(period = 'day', date = new Date()) {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        const data = await $api.sales.getSummary(period, date);
-        this.summary = data.summary;
-        return data;
+        // Get sales records for the period
+        const { data: salesData, error: salesError } = await supabase
+          .from('sales_records')
+          .select(`
+            *,
+            customers (name),
+            staff (name),
+            appointments (service_type)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (salesError) throw salesError;
+
+        // Calculate summary metrics
+        const totalSales = salesData?.reduce((sum, record) => sum + record.amount, 0) || 0;
+        const customerCount = new Set(salesData?.map(record => record.customer_id)).size;
+        const averageTransaction = customerCount ? Math.round(totalSales / customerCount) : 0;
+
+        this.summary = {
+          totalSales,
+          salesTrend: 5, // Example trend
+          targetProgress: 75,
+          customerCount,
+          customerTrend: 8,
+          customerTargetProgress: 80,
+          averageTransaction,
+          avgTransactionTrend: 3,
+          avgTransactionTargetProgress: 85,
+          newCustomers: Math.round(customerCount * 0.3), // Example calculation
+          newCustomerTrend: 10,
+          newCustomerTargetProgress: 70
+        };
+
+        this.records = salesData || [];
+        return { summary: this.summary, records: this.records };
       } catch (error) {
         this.error = error.message;
         throw error;
@@ -27,10 +77,19 @@ export const useSalesStore = defineStore('sales', {
     async fetchRecords() {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        const data = await $api.sales.getRecords();
-        this.records = data;
-        return data;
+        const { data, error } = await supabase
+          .from('sales_records')
+          .select(`
+            *,
+            customers (name),
+            staff (name),
+            appointments (service_type)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        this.records = data || [];
+        return this.records;
       } catch (error) {
         this.error = error.message;
         throw error;
@@ -42,10 +101,20 @@ export const useSalesStore = defineStore('sales', {
     async createRecord(data) {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        const record = await $api.sales.create(data);
-        this.records.unshift(record);
-        return record;
+        const { data: newRecord, error } = await supabase
+          .from('sales_records')
+          .insert([data])
+          .select(`
+            *,
+            customers (name),
+            staff (name),
+            appointments (service_type)
+          `)
+          .single();
+
+        if (error) throw error;
+        this.records.unshift(newRecord);
+        return newRecord;
       } catch (error) {
         this.error = error.message;
         throw error;
@@ -57,12 +126,25 @@ export const useSalesStore = defineStore('sales', {
     async updateRecord(id, data) {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        const updated = await $api.sales.update(id, data);
+        const { data: updated, error } = await supabase
+          .from('sales_records')
+          .update(data)
+          .eq('id', id)
+          .select(`
+            *,
+            customers (name),
+            staff (name),
+            appointments (service_type)
+          `)
+          .single();
+
+        if (error) throw error;
+
         const index = this.records.findIndex(r => r.id === id);
         if (index !== -1) {
           this.records[index] = updated;
         }
+
         return updated;
       } catch (error) {
         this.error = error.message;
@@ -75,8 +157,13 @@ export const useSalesStore = defineStore('sales', {
     async deleteRecord(id) {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        await $api.sales.delete(id);
+        const { error } = await supabase
+          .from('sales_records')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
         const index = this.records.findIndex(r => r.id === id);
         if (index !== -1) {
           this.records.splice(index, 1);
