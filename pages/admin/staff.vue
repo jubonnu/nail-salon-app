@@ -170,25 +170,26 @@ const staffStore = useStaffStore();
 const showStaffDialog = ref(false);
 const showDeleteDialog = ref(false);
 const editingStaff = ref(false);
-const staffToDelete = ref(null);
 const staffFormRef = ref(null);
+const staffToDelete = ref(null);
+const creating = ref(false);
 
 const loading = computed(() => staffStore.loading);
 const error = computed(() => staffStore.error);
 const staffList = computed(() => staffStore.staff);
 
-// Form model
+// スタッフ登録フォーム
 const staffForm = reactive({
   name: '',
   role: '',
   email: '',
   phone: '',
-  startDate: '',
+  start_date: null,
   skills: [],
   notes: ''
 });
 
-// Validation rules
+// バリデーションルール
 const rules = {
   name: [
     { required: true, message: '名前を入力してください', trigger: 'blur' }
@@ -203,7 +204,7 @@ const rules = {
   phone: [
     { required: true, message: '電話番号を入力してください', trigger: 'blur' }
   ],
-  startDate: [
+  start_date: [
     { required: true, message: '勤務開始日を選択してください', trigger: 'change' }
   ]
 };
@@ -223,7 +224,10 @@ const formatDate = (date) => {
 
 const editStaff = (staff) => {
   editingStaff.value = true;
-  Object.assign(staffForm, staff);
+  Object.assign(staffForm, {
+    ...staff,
+    start_date: dayjs(staff.start_date).toDate()
+  });
   showStaffDialog.value = true;
 };
 
@@ -234,15 +238,26 @@ const confirmDeleteStaff = (staff) => {
 
 const saveStaff = async () => {
   if (!staffFormRef.value) return;
-  
+  creating.value = true;
+
   await staffFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
+        const staffData = {
+          name: staffForm.name,
+          email: staffForm.email,
+          phone: staffForm.phone,
+          role: staffForm.role,
+          skills: staffForm.skills,
+          start_date: dayjs(staffForm.start_date).format('YYYY-MM-DD'),
+          notes: staffForm.notes
+        };
+
         if (editingStaff.value) {
-          await staffStore.updateStaff(staffForm.id, staffForm);
+          await staffStore.updateStaff(staffForm.id, staffData);
           ElMessage.success('スタッフ情報を更新しました');
         } else {
-          await staffStore.createStaff(staffForm);
+          await staffStore.createStaff(staffData);
           ElMessage.success('スタッフを登録しました');
         }
         resetForm();
@@ -251,6 +266,8 @@ const saveStaff = async () => {
         ElMessage.error(editingStaff.value ? 'スタッフ情報の更新に失敗しました' : 'スタッフの登録に失敗しました');
       }
     }
+  }).finally(() => {
+    creating.value = false;
   });
 };
 
@@ -277,7 +294,7 @@ const resetForm = () => {
     role: '',
     email: '',
     phone: '',
-    startDate: '',
+    start_date: null,
     skills: [],
     notes: ''
   });
@@ -285,5 +302,12 @@ const resetForm = () => {
   editingStaff.value = false;
 };
 
-onMounted(loadStaff);
+// Load initial data
+onMounted(async () => {
+  try {
+    await staffStore.fetchStaff();
+  } catch (error) {
+    ElMessage.error('スタッフデータの取得に失敗しました');
+  }
+});
 </script>
