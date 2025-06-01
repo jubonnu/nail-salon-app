@@ -1,12 +1,21 @@
-<div 
-  v-loading="loading"
-  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-  v-show="sortedPosts.length > 0"
->
+<template>
   <div 
-    v-for="post in sortedPosts"
-    :key="post.id"
+    v-loading="loading"
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    v-show="sortedPosts.length > 0"
   >
-    <PostCard :post="post" />
+    <div 
+      v-for="post in sortedPosts"
+      :key="post.id"
+    >
+      <PostCard :post="post" />
+    </div>
   </div>
-</div>
+</template>
+
+<script setup>
+import { useInstagramStore } from '~/stores/instagram';
+
+const instagramStore = useInstagramStore();
+const { loading, sortedPosts } = storeToRefs(instagramStore);
+</script>
