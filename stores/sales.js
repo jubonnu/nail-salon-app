@@ -52,21 +52,7 @@ export const useSalesStore = defineStore('sales', {
         // Get sales records for the period
         const { data: salesData, error: salesError } = await supabase
           .from('sales_records')
-          .select(`
-            *,
-            customers (
-              name,
-              email,
-              phone
-            ),
-            staff (
-              name,
-              email
-            ),
-            appointments (
-              service_type
-            )
-          `)
+          .select('*')
           .gte('created_at', currentPeriod.start.toISOString())
           .lte('created_at', currentPeriod.end.toISOString())
           .order('created_at', { ascending: false });
@@ -80,44 +66,57 @@ export const useSalesStore = defineStore('sales', {
           .gte('created_at', previousPeriod.start.toISOString())
           .lte('created_at', previousPeriod.end.toISOString());
 
-        // Filter out null or invalid records
-        const validSalesData = salesData?.filter(record => record.amount && record.customer_id) || [];
-        const validPrevSalesData = prevSalesData?.filter(record => record.amount && record.customer_id) || [];
+        // Ensure we have arrays to work with
+        const currentSales = salesData || [];
+        const previousSales = prevSalesData || [];
 
         // Calculate metrics
-        const totalSales = validSalesData.reduce((sum, record) => sum + record.amount, 0);
-        const prevTotalSales = validPrevSalesData.reduce((sum, record) => sum + record.amount, 0);
+        const totalSales = currentSales.reduce((sum, record) => sum + (record.amount || 0), 0);
+        const prevTotalSales = previousSales.reduce((sum, record) => sum + (record.amount || 0), 0);
         const salesTrend = prevTotalSales ? Math.round((totalSales - prevTotalSales) / prevTotalSales * 100) : 0;
 
         // Calculate unique customers
-        const uniqueCustomers = new Set(validSalesData.map(record => record.customer_id));
+        const uniqueCustomers = new Set(currentSales.map(record => record.customer_id));
         const customerCount = uniqueCustomers.size;
-        const prevUniqueCustomers = new Set(validPrevSalesData.map(record => record.customer_id));
+        const prevUniqueCustomers = new Set(previousSales.map(record => record.customer_id));
         const prevCustomerCount = prevUniqueCustomers.size;
         const customerTrend = prevCustomerCount ? Math.round((customerCount - prevCustomerCount) / prevCustomerCount * 100) : 0;
 
         // Calculate average transaction value
-        const averageTransaction = customerCount ? Math.round(totalSales / customerCount) : 0;
-        const prevAverageTransaction = prevCustomerCount ? Math.round(prevTotalSales / prevCustomerCount) : 0;
+        const averageTransaction = currentSales.length ? Math.round(totalSales / currentSales.length) : 0;
+        const prevAverageTransaction = previousSales.length ? Math.round(prevTotalSales / previousSales.length) : 0;
         const avgTransactionTrend = prevAverageTransaction ? Math.round((averageTransaction - prevAverageTransaction) / prevAverageTransaction * 100) : 0;
 
         // Get all customer IDs from previous periods
         const { data: allPreviousCustomers } = await supabase
           .from('sales_records')
-          .select('customer_id')
+          .select('customer_id, created_at')
           .lt('created_at', currentPeriod.start.toISOString())
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: true });
 
-        const previousCustomerIds = new Set(allPreviousCustomers?.map(record => record.customer_id));
+        const previousCustomerIds = new Set();
+        allPreviousCustomers?.forEach(record => {
+          if (record.customer_id) {
+            previousCustomerIds.add(record.customer_id);
+          }
+        });
         
         // Calculate new customers (customers who made their first purchase in this period)
-        const newCustomers = Array.from(uniqueCustomers)
-          .filter(id => !previousCustomerIds.has(id))
-          .length;
+        const newCustomers = currentSales.reduce((count, record) => {
+          if (record.customer_id && !previousCustomerIds.has(record.customer_id)) {
+            previousCustomerIds.add(record.customer_id); // Add to set so we don't count the same customer twice
+            return count + 1;
+          }
+          return count;
+        }, 0);
 
-        const prevNewCustomers = Array.from(prevUniqueCustomers)
-          .filter(id => !previousCustomerIds.has(id))
-          .length;
+        const prevNewCustomers = previousSales.reduce((count, record) => {
+          if (record.customer_id && !previousCustomerIds.has(record.customer_id)) {
+            previousCustomerIds.add(record.customer_id);
+            return count + 1;
+          }
+          return count;
+        }, 0);
 
         const newCustomerTrend = prevNewCustomers ? Math.round((newCustomers - prevNewCustomers) / prevNewCustomers * 100) : 0;
 
@@ -135,8 +134,7 @@ export const useSalesStore = defineStore('sales', {
           newCustomerTrend,
           newCustomerTargetProgress: 70
         };
-        
-        this.records = validSalesData;
+        this.records = currentSales;
         return { summary: this.summary, records: this.records };
       } catch (error) {
         this.error = error.message;
