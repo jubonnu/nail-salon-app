@@ -132,21 +132,18 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { useInstagramStore } from '~/stores/instagram';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 const instagramStore = useInstagramStore();
 const showCreatePostDialog = ref(false);
 const editingPost = ref(false);
 const editingPostId = ref(null);
-const fallbackImageUrl = 'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg';
-
-// Sample nail design images from Pexels
-const sampleImages = [
-  'https://images.pexels.com/photos/704815/pexels-photo-704815.jpeg',
-  'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg',
-  'https://images.pexels.com/photos/939836/pexels-photo-939836.jpeg',
-  'https://images.pexels.com/photos/1638340/pexels-photo-1638340.jpeg',
-  'https://images.pexels.com/photos/3997385/pexels-photo-3997385.jpeg'
-];
+const uploadingImage = ref(false);
 
 const loading = computed(() => instagramStore.loading);
 const error = computed(() => instagramStore.error);
@@ -174,9 +171,8 @@ const commonHashtags = [
   '#ネイルスタイル'
 ];
 
-const handleImageError = (event) => {
-  // Only update the display source, don't persist to database
-  event.target.src = fallbackImageUrl;
+const handleImageError = async (post) => {
+  ElMessage.error('画像の読み込みに失敗しました');
 };
 
 const loadPosts = async () => {
@@ -190,11 +186,37 @@ const loadPosts = async () => {
   }
 };
 
-const handleImageChange = (file) => {
+const handleImageChange = async (file) => {
   if (file.raw) {
-    // Select a random sample image
-    const randomIndex = Math.floor(Math.random() * sampleImages.length);
-    postForm.image_url = sampleImages[randomIndex];
+    uploadingImage.value = true;
+    try {
+      // Generate a unique filename
+      const fileExt = file.raw.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      
+      // Upload file to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('instagram')
+        .upload(fileName, file.raw, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('instagram')
+        .getPublicUrl(fileName);
+
+      postForm.image_url = publicUrl;
+      ElMessage.success('画像をアップロードしました');
+    } catch (error) {
+      console.error('Upload error:', error);
+      ElMessage.error('画像のアップロードに失敗しました');
+    } finally {
+      uploadingImage.value = false;
+    }
   }
 };
 
@@ -210,6 +232,19 @@ const editPost = (post) => {
   });
   
   showCreatePostDialog.value = true;
+};
+
+const deleteImage = async (imageUrl) => {
+  if (!imageUrl) return;
+  
+  try {
+    const fileName = imageUrl.split('/').pop();
+    await supabase.storage
+      .from('instagram')
+      .remove([fileName]);
+  } catch (error) {
+    console.error('Delete image error:', error);
+  }
 };
 
 const savePost = async () => {
@@ -249,6 +284,13 @@ const savePost = async () => {
   }
   
   resetPostForm();
+  if (editingPost.value) {
+    // Delete old image if updating
+    const oldPost = sortedPosts.value.find(p => p.id === editingPostId.value);
+    if (oldPost && oldPost.image_url !== postForm.image_url) {
+      await deleteImage(oldPost.image_url);
+    }
+  }
   showCreatePostDialog.value = false;
   editingPost.value = false;
   editingPostId.value = null;
@@ -272,6 +314,7 @@ const unschedulePost = async (post) => {
   try {
     await instagramStore.updatePost(post.id, {
       ...post,
+      image_url: post.image_url,
       scheduled_time: null,
       status: 'draft'
     });
@@ -282,12 +325,16 @@ const unschedulePost = async (post) => {
 };
 
 const resetPostForm = () => {
+  const oldImageUrl = postForm.image_url;
   Object.assign(postForm, {
     image_url: '',
     caption: '',
     hashtags: [],
     scheduled_time: null
   });
+  if (oldImageUrl && !editingPost.value) {
+    deleteImage(oldImageUrl);
+  }
 };
 
 onMounted(loadPosts);
