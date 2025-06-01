@@ -208,28 +208,50 @@ import { ref, onMounted } from 'vue';
 import { useSalesStore } from '~/stores/sales';
 
 const salesStore = useSalesStore();
-const selectedPeriod = ref('this-week');
+const dateRangeType = ref('month');
+const customDateRange = ref(null);
+const chartType = ref('daily');
+const topServices = ref([]);
 
 const loading = computed(() => salesStore.loading);
 const error = computed(() => salesStore.error);
 const summary = computed(() => salesStore.summary || {});
 const recentSales = computed(() => salesStore.records || []);
 
-const loadData = async () => {
+const updateDateRange = async () => {
+  await loadSalesData();
+};
+
+const loadSalesData = async () => {
   try {
-    await salesStore.fetchSummary(selectedPeriod.value);
+    await salesStore.fetchSummary(dateRangeType.value);
   } catch (e) {
     ElMessage.error('データの取得に失敗しました');
   }
 };
 
-const handlePeriodChange = () => {
-  loadData();
+const exportReport = () => {
+  // Implement report export
+};
+
+const generateCustomReport = () => {
+  // Implement custom report generation
+};
+
+const viewSalesDetail = () => {
+  // Implement sales detail view
+};
+
+const loadData = async () => {
+  try {
+    await Promise.all([
+      salesStore.fetchSummary(dateRangeType.value),
+      salesStore.fetchRecords()
+    ]);
+  } catch (e) {
+    ElMessage.error('データの取得に失敗しました');
+  }
 };
 
 onMounted(loadData);
-
-watch(selectedPeriod, () => {
-  handlePeriodChange();
-});
 </script>

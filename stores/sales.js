@@ -37,95 +37,112 @@ export const useSalesStore = defineStore('sales', {
     async fetchSummary(period = 'day', date = new Date()) {
       this.loading = true;
       try {
-        // Calculate date ranges
-        const now = dayjs(date);
-        const startDate = now.startOf(period);
-        const endDate = now.endOf(period);
-        const prevStartDate = startDate.subtract(1, period);
-        const prevEndDate = startDate.subtract(1, 'millisecond');
+        let startDate, endDate, prevStartDate, prevEndDate;
+        
+        switch (period) {
+          case 'today':
+            startDate = dayjs().startOf('day');
+            endDate = dayjs().endOf('day');
+            prevStartDate = startDate.subtract(1, 'day');
+            prevEndDate = prevStartDate.endOf('day');
+            break;
+          case 'week':
+            startDate = dayjs().startOf('week');
+            endDate = dayjs().endOf('week');
+            prevStartDate = startDate.subtract(1, 'week');
+            prevEndDate = prevStartDate.endOf('week');
+            break;
+          case 'month':
+            startDate = dayjs().startOf('month');
+            endDate = dayjs().endOf('month');
+            prevStartDate = startDate.subtract(1, 'month');
+            prevEndDate = prevStartDate.endOf('month');
+            break;
+          case 'year':
+            startDate = dayjs().startOf('year');
+            endDate = dayjs().endOf('year');
+            prevStartDate = startDate.subtract(1, 'year');
+            prevEndDate = prevStartDate.endOf('year');
+            break;
+          default:
+            startDate = dayjs().startOf('month');
+            endDate = dayjs().endOf('month');
+            prevStartDate = startDate.subtract(1, 'month');
+            prevEndDate = prevStartDate.endOf('month');
+        }
 
         // Fetch current period sales data
         const { data: salesData, error: salesError } = await supabase
           .from('sales_records')
           .select(`
             *,
-            customers (
-              name,
-              email,
-              phone
-            ),
-            staff (
-              name,
-              email
-            ),
-            appointments (
-              service_type
-            )
+            customers!inner (name, email, phone),
+            staff!inner (name, email),
+            appointments!left (service_type)
           `)
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString())
           .order('created_at', { ascending: false });
 
         if (salesError) throw salesError;
+        
+        const currentPeriodSales = salesData || [];
 
         // Fetch previous period sales data
         const { data: prevSalesData, error: prevError } = await supabase
           .from('sales_records')
           .select(`
-            amount,
-            customer_id,
-            created_at,
-            customers (
-              name,
-              email,
-              phone
-            )
+            *,
+            customers!inner (name, email, phone)
           `)
           .gte('created_at', prevStartDate.toISOString())
           .lte('created_at', prevEndDate.toISOString());
 
         if (prevError) throw prevError;
-
-        // Ensure we have arrays even if no data
-        const currentPeriodSales = salesData || [];
         const previousPeriodSales = prevSalesData || [];
 
         // Calculate total sales
         const totalSales = currentPeriodSales.reduce((sum, record) => sum + record.amount, 0);
         const prevTotalSales = previousPeriodSales.reduce((sum, record) => sum + record.amount, 0);
-        const salesTrend = prevTotalSales ? Math.round((totalSales - prevTotalSales) / prevTotalSales * 100) : 0;
+        const salesTrend = prevTotalSales > 0 ? Math.round((totalSales - prevTotalSales) / prevTotalSales * 100) : 0;
 
         // Calculate customer metrics
         const uniqueCustomers = new Set(currentPeriodSales.map(record => record.customer_id));
         const customerCount = uniqueCustomers.size;
         const prevUniqueCustomers = new Set(previousPeriodSales.map(record => record.customer_id));
         const prevCustomerCount = prevUniqueCustomers.size;
-        const customerTrend = prevCustomerCount ? Math.round((customerCount - prevCustomerCount) / prevCustomerCount * 100) : 0;
+        const customerTrend = prevCustomerCount > 0 ? Math.round((customerCount - prevCustomerCount) / prevCustomerCount * 100) : 0;
 
         // Calculate average transaction
         const averageTransaction = customerCount ? Math.round(totalSales / customerCount) : 0;
         const prevAverageTransaction = prevCustomerCount ? Math.round(prevTotalSales / prevCustomerCount) : 0;
-        const avgTransactionTrend = prevAverageTransaction ? Math.round((averageTransaction - prevAverageTransaction) / prevAverageTransaction * 100) : 0;
+        const avgTransactionTrend = prevAverageTransaction > 0 ? Math.round((averageTransaction - prevAverageTransaction) / prevAverageTransaction * 100) : 0;
 
         // Calculate new customers (customers who don't appear in previous period)
         const prevCustomerIds = new Set(previousPeriodSales.map(record => record.customer_id));
         const newCustomers = Array.from(uniqueCustomers).filter(id => !prevCustomerIds.has(id)).length;
-        const prevNewCustomers = Array.from(prevUniqueCustomers).length;
-
-        const newCustomerTrend = prevNewCustomers ? Math.round((newCustomers - prevNewCustomers) / prevNewCustomers * 100) : 0;
+        const prevNewCustomers = Array.from(prevUniqueCustomers).filter(id => 
+          !Array.from(uniqueCustomers).includes(id)
+        ).length;
+        const newCustomerTrend = prevNewCustomers > 0 ? Math.round((newCustomers - prevNewCustomers) / prevNewCustomers * 100) : 0;
 
         // Calculate target progress based on monthly goals
         const monthlyGoals = {
-          sales: 1000000,        // 100万円/月
-          customers: 100,        // 100人/月
-          avgTransaction: 10000, // 1万円/件
-          newCustomers: 20       // 20人/月
+          sales: 1000000,
+          customers: 100,
+          avgTransaction: 10000,
+          newCustomers: 20
         };
 
-        const targetProgress = Math.round((totalSales / monthlyGoals.sales) * 100);
-        const customerTargetProgress = Math.round((customerCount / monthlyGoals.customers) * 100);
-        const avgTransactionTargetProgress = Math.round((averageTransaction / monthlyGoals.avgTransaction) * 100);
-        const newCustomerTargetProgress = Math.round((newCustomers / monthlyGoals.newCustomers) * 100);
+        // Adjust progress calculation based on period
+        const daysInMonth = dayjs().daysInMonth();
+        const currentDay = dayjs().date();
+        const progressMultiplier = period === 'month' ? 1 : (daysInMonth / currentDay);
+
+        const targetProgress = Math.min(100, Math.round((totalSales / (monthlyGoals.sales / progressMultiplier)) * 100));
+        const customerTargetProgress = Math.min(100, Math.round((customerCount / (monthlyGoals.customers / progressMultiplier)) * 100));
+        const avgTransactionTargetProgress = Math.min(100, Math.round((averageTransaction / monthlyGoals.avgTransaction) * 100));
+        const newCustomerTargetProgress = Math.min(100, Math.round((newCustomers / (monthlyGoals.newCustomers / progressMultiplier)) * 100));
 
         this.summary = {
           totalSales,
