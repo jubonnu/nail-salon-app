@@ -213,24 +213,23 @@ const selectedPeriod = ref('this-week');
 const loading = computed(() => salesStore.loading);
 const error = computed(() => salesStore.error);
 const summary = computed(() => salesStore.summary || {});
-const recentSales = computed(() => salesStore.records.slice(0, 5));
+const recentSales = computed(() => salesStore.records || []);
 
 const loadData = async () => {
   try {
-    await Promise.all([
-      salesStore.fetchSummary(selectedPeriod.value),
-      salesStore.fetchRecords()
-    ]);
+    await salesStore.fetchSummary(selectedPeriod.value);
   } catch (e) {
     ElMessage.error('データの取得に失敗しました');
   }
 };
 
-const handlePeriodChange = async () => {
-  await salesStore.fetchSummary(selectedPeriod.value);
+const handlePeriodChange = () => {
+  loadData();
 };
 
 onMounted(loadData);
 
-watch(selectedPeriod, handlePeriodChange);
+watch(selectedPeriod, () => {
+  handlePeriodChange();
+});
 </script>

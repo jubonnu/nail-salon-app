@@ -37,25 +37,28 @@ export const useSalesStore = defineStore('sales', {
     async fetchSummary(period = 'day', date = new Date()) {
       this.loading = true;
       try {
-        const startDate = dayjs(date).startOf(period);
-        const endDate = dayjs(date).endOf(period);
+        // Calculate date ranges
+        const now = dayjs(date);
+        const startDate = now.startOf(period);
+        const endDate = now.endOf(period);
         const prevStartDate = startDate.subtract(1, period);
-        const prevEndDate = endDate.subtract(1, period);
+        const prevEndDate = startDate.subtract(1, 'millisecond');
 
+        // Fetch current period sales data
         const { data: salesData, error: salesError } = await supabase
           .from('sales_records')
           .select(`
             *,
-            customers!inner (
+            customers (
               name,
               email,
               phone
             ),
-            staff!inner (
+            staff (
               name,
               email
             ),
-            appointments!left (
+            appointments (
               service_type
             )
           `)
@@ -65,74 +68,58 @@ export const useSalesStore = defineStore('sales', {
 
         if (salesError) throw salesError;
 
+        // Fetch previous period sales data
         const { data: prevSalesData, error: prevError } = await supabase
           .from('sales_records')
           .select(`
             amount,
             customer_id,
-            created_at
+            created_at,
+            customers (
+              name,
+              email,
+              phone
+            )
           `)
           .gte('created_at', prevStartDate.toISOString())
           .lte('created_at', prevEndDate.toISOString());
 
         if (prevError) throw prevError;
 
-        const currentSales = salesData || [];
-        const previousSales = prevSalesData || [];
+        // Ensure we have arrays even if no data
+        const currentPeriodSales = salesData || [];
+        const previousPeriodSales = prevSalesData || [];
 
         // Calculate total sales
-        const totalSales = currentSales.reduce((sum, record) => sum + record.amount, 0);
-        const prevTotalSales = previousSales.reduce((sum, record) => sum + record.amount, 0);
+        const totalSales = currentPeriodSales.reduce((sum, record) => sum + record.amount, 0);
+        const prevTotalSales = previousPeriodSales.reduce((sum, record) => sum + record.amount, 0);
         const salesTrend = prevTotalSales ? Math.round((totalSales - prevTotalSales) / prevTotalSales * 100) : 0;
 
         // Calculate customer metrics
-        const uniqueCustomers = new Set(currentSales.map(record => record.customer_id));
+        const uniqueCustomers = new Set(currentPeriodSales.map(record => record.customer_id));
         const customerCount = uniqueCustomers.size;
-        const prevUniqueCustomers = new Set(previousSales.map(record => record.customer_id));
+        const prevUniqueCustomers = new Set(previousPeriodSales.map(record => record.customer_id));
         const prevCustomerCount = prevUniqueCustomers.size;
         const customerTrend = prevCustomerCount ? Math.round((customerCount - prevCustomerCount) / prevCustomerCount * 100) : 0;
 
         // Calculate average transaction
-        const averageTransaction = currentSales.length ? Math.round(totalSales / currentSales.length) : 0;
-        const prevAverageTransaction = previousSales.length ? Math.round(prevTotalSales / previousSales.length) : 0;
+        const averageTransaction = customerCount ? Math.round(totalSales / customerCount) : 0;
+        const prevAverageTransaction = prevCustomerCount ? Math.round(prevTotalSales / prevCustomerCount) : 0;
         const avgTransactionTrend = prevAverageTransaction ? Math.round((averageTransaction - prevAverageTransaction) / prevAverageTransaction * 100) : 0;
 
-        // Get historical customer data for new customer calculation
-        const { data: historicalCustomers, error: historyError } = await supabase
-          .from('sales_records')
-          .select('customer_id, created_at')
-          .lt('created_at', startDate.toISOString())
-          .order('created_at', { ascending: true });
-
-        if (historyError) throw historyError;
-
-        const historicalCustomerIds = new Set(
-          historicalCustomers?.map(record => record.customer_id) || []
-        );
-        
-        // Calculate new customers
-        const newCustomerIds = new Set(
-          currentSales
-            .filter(record => !historicalCustomerIds.has(record.customer_id))
-            .map(record => record.customer_id)
-        );
-        const newCustomers = newCustomerIds.size;
-
-        const prevNewCustomerIds = new Set(
-          previousSales
-            .filter(record => !historicalCustomerIds.has(record.customer_id))
-            .map(record => record.customer_id)
-        );
-        const prevNewCustomers = prevNewCustomerIds.size;
+        // Calculate new customers (customers who don't appear in previous period)
+        const prevCustomerIds = new Set(previousPeriodSales.map(record => record.customer_id));
+        const newCustomers = Array.from(uniqueCustomers).filter(id => !prevCustomerIds.has(id)).length;
+        const prevNewCustomers = Array.from(prevUniqueCustomers).length;
 
         const newCustomerTrend = prevNewCustomers ? Math.round((newCustomers - prevNewCustomers) / prevNewCustomers * 100) : 0;
 
         // Calculate target progress based on monthly goals
         const monthlyGoals = {
-          sales: 1000000,    // 100万円
-          customers: 100,    // 100人
-          avgTransaction: 10000,  // 1万円
-          newCustomers: 20   // 20人
+          sales: 1000000,        // 100万円/月
+          customers: 100,        // 100人/月
+          avgTransaction: 10000, // 1万円/件
+          newCustomers: 20       // 20人/月
         };
 
         const targetProgress = Math.round((totalSales / monthlyGoals.sales) * 100);
@@ -155,7 +142,7 @@ export const useSalesStore = defineStore('sales', {
           newCustomerTargetProgress
         };
 
-        this.records = currentSales;
+        this.records = currentPeriodSales;
         return { summary: this.summary, records: this.records };
       } catch (error) {
         this.error = error.message;
