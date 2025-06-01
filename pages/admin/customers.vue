@@ -188,24 +188,36 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue';
+import { ref, computed, reactive } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useCustomerStore } from '~/stores/customers';
 
 const customerStore = useCustomerStore();
 
 // State variables
-const searchQuery = ref('');
-const filterVisitCount = ref('');
-const filterService = ref('');
-const currentPage = ref(1);
-const pageSize = ref(10);
-const totalCustomers = ref(85);
-const showAddCustomerDialog = ref(false);
-const showCustomerDrawer = ref(false);
-const selectedCustomer = ref(null);
-const addingCustomer = ref(false);
-const customerFormRef = ref(null);
+const {
+  searchQuery,
+  filterVisitCount,
+  filterService,
+  currentPage,
+  pageSize,
+  showAddCustomerDialog,
+  showCustomerDrawer,
+  selectedCustomer,
+  addingCustomer,
+  customerFormRef
+} = $(defineProps({
+  searchQuery: { type: String, default: '' },
+  filterVisitCount: { type: String, default: '' },
+  filterService: { type: String, default: '' },
+  currentPage: { type: Number, default: 1 },
+  pageSize: { type: Number, default: 10 },
+  showAddCustomerDialog: { type: Boolean, default: false },
+  showCustomerDrawer: { type: Boolean, default: false },
+  selectedCustomer: { type: Object, default: null },
+  addingCustomer: { type: Boolean, default: false },
+  customerFormRef: { type: Object, default: null }
+}));
 
 // Recent visits for selected customer
 const recentVisits = ref([
@@ -240,6 +252,7 @@ const customerRules = {
 const loading = computed(() => customerStore.loading);
 const error = computed(() => customerStore.error);
 const customers = computed(() => customerStore.customers);
+const totalCustomers = computed(() => customers.value.length);
 
 // Computed properties
 const filteredCustomers = computed(() => {
@@ -323,10 +336,13 @@ const addCustomer = async () => {
 
 // Load initial data
 onMounted(async () => {
+  loading.value = true;
   try {
     await customerStore.fetchCustomers();
   } catch (error) {
     ElMessage.error('顧客データの取得に失敗しました');
+  } finally {
+    loading.value = false;
   }
 });
 
