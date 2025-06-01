@@ -2,13 +2,20 @@
   <div>
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold">スタッフ管理</h1>
-      <el-button type="primary" @click="showStaffDialog = true">
+      <el-button 
+        type="primary" 
+        @click="showStaffDialog = true"
+        :loading="loading"
+      >
         新規スタッフ登録
       </el-button>
     </div>
 
     <!-- スタッフ一覧 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div 
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      v-loading="loading"
+    >
       <div v-for="staff in staffList" :key="staff.id" class="bg-white rounded-lg shadow">
         <div class="p-6">
           <div class="flex items-center mb-4">
@@ -155,15 +162,20 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
+import { useStaffStore } from '~/stores/staff';
 import dayjs from 'dayjs';
 
-// State
+const staffStore = useStaffStore();
 const showStaffDialog = ref(false);
 const showDeleteDialog = ref(false);
 const editingStaff = ref(false);
 const staffToDelete = ref(null);
 const staffFormRef = ref(null);
+
+const loading = computed(() => staffStore.loading);
+const error = computed(() => staffStore.error);
+const staffList = computed(() => staffStore.staff);
 
 // Form model
 const staffForm = reactive({
@@ -196,39 +208,13 @@ const rules = {
   ]
 };
 
-// Sample data
-const staffList = ref([
-  {
-    id: 1,
-    name: '山田 愛子',
-    role: 'シニアネイリスト',
-    email: 'yamada.aiko@example.com',
-    phone: '090-1234-5678',
-    startDate: '2022-04-01',
-    skills: ['ジェルネイル', 'スカルプチュア', 'アート'],
-    notes: 'コンテストで入賞経験あり'
-  },
-  {
-    id: 2,
-    name: '佐藤 美咲',
-    role: 'ネイリスト',
-    email: 'sato.misaki@example.com',
-    phone: '080-8765-4321',
-    startDate: '2023-06-15',
-    skills: ['ジェルネイル', 'ネイルケア', 'ハンドケア'],
-    notes: ''
-  },
-  {
-    id: 3,
-    name: '田中 優子',
-    role: '店長',
-    email: 'tanaka.yuko@example.com',
-    phone: '070-9876-5432',
-    startDate: '2021-08-01',
-    skills: ['ジェルネイル', 'スカルプチュア', 'フットケア', 'アート'],
-    notes: '社内講師資格保有'
+const loadStaff = async () => {
+  try {
+    await staffStore.fetchStaff();
+  } catch (e) {
+    ElMessage.error('スタッフ情報の取得に失敗しました');
   }
-]);
+};
 
 // Methods
 const formatDate = (date) => {
@@ -248,38 +234,37 @@ const confirmDeleteStaff = (staff) => {
 
 const saveStaff = async () => {
   if (!staffFormRef.value) return;
-
+  
   await staffFormRef.value.validate(async (valid) => {
     if (valid) {
-      if (editingStaff.value) {
-        const index = staffList.value.findIndex(s => s.id === staffForm.id);
-        if (index !== -1) {
-          staffList.value[index] = { ...staffForm };
+      try {
+        if (editingStaff.value) {
+          await staffStore.updateStaff(staffForm.id, staffForm);
+          ElMessage.success('スタッフ情報を更新しました');
+        } else {
+          await staffStore.createStaff(staffForm);
+          ElMessage.success('スタッフを登録しました');
         }
-      } else {
-        const newStaff = {
-          id: staffList.value.length + 1,
-          ...staffForm
-        };
-        staffList.value.push(newStaff);
+        resetForm();
+        showStaffDialog.value = false;
+      } catch (e) {
+        ElMessage.error(editingStaff.value ? 'スタッフ情報の更新に失敗しました' : 'スタッフの登録に失敗しました');
       }
-
-      resetForm();
-      showStaffDialog.value = false;
     }
   });
 };
 
-const deleteStaff = () => {
+const deleteStaff = async () => {
   if (!staffToDelete.value) return;
-
-  const index = staffList.value.findIndex(s => s.id === staffToDelete.value.id);
-  if (index !== -1) {
-    staffList.value.splice(index, 1);
+  
+  try {
+    await staffStore.deleteStaff(staffToDelete.value.id);
+    ElMessage.success('スタッフを削除しました');
+    showDeleteDialog.value = false;
+    staffToDelete.value = null;
+  } catch (e) {
+    ElMessage.error('スタッフの削除に失敗しました');
   }
-
-  showDeleteDialog.value = false;
-  staffToDelete.value = null;
 };
 
 const resetForm = () => {
@@ -299,4 +284,6 @@ const resetForm = () => {
   
   editingStaff.value = false;
 };
+
+onMounted(loadStaff);
 </script>
