@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia';
 import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isSameOrAfter);
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -32,45 +37,66 @@ export const useSalesStore = defineStore('sales', {
     async fetchSummary(period = 'day', date = new Date()) {
       this.loading = true;
       try {
-        const startDate = dayjs(date).startOf(period).toISOString();
-        const endDate = dayjs(date).endOf(period).toISOString();
+        const startDate = dayjs(date).startOf(period);
+        const endDate = dayjs(date).endOf(period);
+        const prevStartDate = startDate.subtract(1, period);
+        const prevEndDate = endDate.subtract(1, period);
 
         // Get sales records for the period
         const { data: salesData, error: salesError } = await supabase
           .from('sales_records')
           .select(`
             *,
-            customers (name),
-            staff (name),
-            appointments (service_type)
-          `).order('created_at', { ascending: false })
-          .gte('created_at', startDate)
-          .lte('created_at', endDate);
+            customers!inner (
+              name,
+              email,
+              phone
+            ),
+            staff!inner (
+              name,
+              email
+            ),
+            appointments!left (
+              service_type
+            )
+          `)
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString())
+          .order('created_at', { ascending: false });
 
         if (salesError) throw salesError;
 
-        // Get previous period data for trends
-        const prevStartDate = startDate.subtract(1, period);
-        const prevEndDate = endDate.subtract(1, period).toISOString();
-
         const { data: prevSalesData } = await supabase
           .from('sales_records')
-          .select('amount, customer_id')
+          .select(`
+            amount,
+            customer_id,
+            created_at
+          `)
           .gte('created_at', prevStartDate.toISOString())
-          .lte('created_at', prevEndDate);
+          .lte('created_at', prevEndDate.toISOString());
 
         // Calculate metrics
         const totalSales = salesData?.reduce((sum, record) => sum + record.amount, 0) || 0;
         const prevTotalSales = prevSalesData?.reduce((sum, record) => sum + record.amount, 0) || 0;
         const salesTrend = prevTotalSales ? Math.round((totalSales - prevTotalSales) / prevTotalSales * 100) : 0;
 
-        const customerCount = new Set(salesData?.map(record => record.customer_id)).size;
-        const prevCustomerCount = new Set(prevSalesData?.map(record => record.customer_id)).size;
+        const uniqueCustomers = new Set(salesData?.map(record => record.customer_id));
+        const customerCount = uniqueCustomers.size;
+        const prevUniqueCustomers = new Set(prevSalesData?.map(record => record.customer_id));
+        const prevCustomerCount = prevUniqueCustomers.size;
         const customerTrend = prevCustomerCount ? Math.round((customerCount - prevCustomerCount) / prevCustomerCount * 100) : 0;
 
         const averageTransaction = customerCount ? Math.round(totalSales / customerCount) : 0;
         const prevAverageTransaction = prevCustomerCount ? Math.round(prevTotalSales / prevCustomerCount) : 0;
         const avgTransactionTrend = prevAverageTransaction ? Math.round((averageTransaction - prevAverageTransaction) / prevAverageTransaction * 100) : 0;
+
+        // Calculate new customers (not present in previous period)
+        const newCustomers = Array.from(uniqueCustomers).filter(id => !prevUniqueCustomers.has(id)).length;
+        const prevNewCustomers = Array.from(prevUniqueCustomers).filter(id => 
+          !salesData?.some(record => record.customer_id === id)
+        ).length;
+        const newCustomerTrend = prevNewCustomers ? Math.round((newCustomers - prevNewCustomers) / prevNewCustomers * 100) : 0;
 
         this.summary = {
           totalSales,
@@ -82,8 +108,8 @@ export const useSalesStore = defineStore('sales', {
           averageTransaction,
           avgTransactionTrend,
           avgTransactionTargetProgress: 85,
-          newCustomers: Math.round(customerCount * 0.3), // Example calculation
-          newCustomerTrend: 10,
+          newCustomers,
+          newCustomerTrend,
           newCustomerTargetProgress: 70
         };
 
