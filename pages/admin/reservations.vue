@@ -214,51 +214,40 @@ const showDeleteDialog = ref(false);
 const editingReservation = ref(false);
 const selectedReservation = ref(null);
 const formRef = ref(null);
+const appointmentStore = useAppointmentStore();
+const customerStore = useCustomerStore();
+const staffStore = useStaffStore();
 
 // Form model
 const reservationForm = reactive({
-  customerName: '',
-  datetime: null,
-  service: '',
-  staff: '',
+  customer_id: '',
+  staff_id: '',
+  service_type: '',
+  start_time: null,
+  end_time: null,
   notes: ''
 });
 
 // Validation rules
 const rules = {
-  customerName: [
-    { required: true, message: 'お客様名を入力してください', trigger: 'blur' }
+  customer_id: [
+    { required: true, message: 'お客様を選択してください', trigger: 'change' }
   ],
-  datetime: [
+  staff_id: [
+    { required: true, message: '担当スタッフを選択してください', trigger: 'change' }
+  ],
+  start_time: [
     { required: true, message: '予約日時を選択してください', trigger: 'change' }
   ],
-  service: [
+  service_type: [
     { required: true, message: '施術内容を選択してください', trigger: 'change' }
-  ],
-  staff: [
-    { required: true, message: '担当スタッフを選択してください', trigger: 'change' }
   ]
 };
 
-// Sample data
-const reservations = ref([
-  {
-    id: 1,
-    customerName: '山田 花子',
-    datetime: '2024-04-05 10:00',
-    service: 'ジェルネイル',
-    staff: '山田 愛子',
-    notes: 'アートの要望あり'
-  },
-  {
-    id: 2,
-    customerName: '鈴木 美咲',
-    datetime: '2024-04-05 14:00',
-    service: 'ネイルケア',
-    staff: '佐藤 美咲',
-    notes: ''
-  }
-]);
+const appointments = computed(() => appointmentStore.appointments);
+const loading = computed(() => appointmentStore.loading);
+const customers = ref([]);
+const staffMembers = ref([]);
 
 // Computed
 const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
@@ -323,7 +312,9 @@ const getReservationClass = (reservation) => {
 
 const createReservation = (date) => {
   editingReservation.value = false;
-  reservationForm.datetime = date;
+  reservationForm.start_time = date;
+  // 1時間後をデフォルトの終了時間に設定
+  reservationForm.end_time = new Date(date.getTime() + 60 * 60 * 1000);
   showCreateReservationDialog.value = true;
 };
 
@@ -334,7 +325,7 @@ const viewReservation = (reservation) => {
 
 const editReservation = (reservation) => {
   editingReservation.value = true;
-  Object.assign(reservationForm, reservation);
+  Object.assign(reservationForm, { ...reservation });
   showReservationDrawer.value = false;
   showCreateReservationDialog.value = true;
 };
@@ -344,20 +335,22 @@ const saveReservation = async () => {
   
   await formRef.value.validate(async (valid) => {
     if (valid) {
+      const appointmentData = {
+        customer_id: reservationForm.customer_id,
+        staff_id: reservationForm.staff_id,
+        service_type: reservationForm.service_type,
+        start_time: reservationForm.start_time,
+        end_time: reservationForm.end_time,
+        notes: reservationForm.notes,
+        status: 'Scheduled'
+      };
+
       if (editingReservation.value) {
-        const index = reservations.value.findIndex(r => r.id === selectedReservation.value.id);
-        if (index !== -1) {
-          reservations.value[index] = {
-            ...selectedReservation.value,
-            ...reservationForm
-          };
-        }
+        await appointmentStore.updateAppointment(selectedReservation.value.id, appointmentData);
+        ElMessage.success('予約を更新しました');
       } else {
-        const newReservation = {
-          id: reservations.value.length + 1,
-          ...reservationForm
-        };
-        reservations.value.push(newReservation);
+        await appointmentStore.createAppointment(appointmentData);
+        ElMessage.success('予約を登録しました');
       }
       
       resetForm();
@@ -371,11 +364,12 @@ const confirmDeleteReservation = () => {
 };
 
 const deleteReservation = () => {
-  const index = reservations.value.findIndex(r => r.id === selectedReservation.value.id);
-  if (index !== -1) {
-    reservations.value.splice(index, 1);
+  try {
+    await appointmentStore.deleteAppointment(selectedReservation.value.id);
+    ElMessage.success('予約をキャンセルしました');
+  } catch (error) {
+    ElMessage.error('予約のキャンセルに失敗しました');
   }
-  showDeleteDialog.value = false;
   showReservationDrawer.value = false;
 };
 
@@ -384,10 +378,11 @@ const resetForm = () => {
     formRef.value.resetFields();
   }
   Object.assign(reservationForm, {
-    customerName: '',
-    datetime: null,
-    service: '',
-    staff: '',
+    customer_id: '',
+    staff_id: '',
+    service_type: '',
+    start_time: null,
+    end_time: null,
     notes: ''
   });
   editingReservation.value = false;
@@ -397,6 +392,22 @@ const resetForm = () => {
 const formatDateTime = (datetime) => {
   return dayjs(datetime).format('YYYY年M月D日 HH:mm');
 };
+
+// Load initial data
+onMounted(async () => {
+  try {
+    await Promise.all([
+      appointmentStore.fetchAppointments(),
+      customerStore.fetchCustomers(),
+      staffStore.fetchStaff()
+    ]);
+    
+    customers.value = customerStore.customers;
+    staffMembers.value = staffStore.staff;
+  } catch (error) {
+    ElMessage.error('データの取得に失敗しました');
+  }
+});
 </script>
 
 <style scoped>
