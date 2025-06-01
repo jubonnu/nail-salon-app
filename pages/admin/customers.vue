@@ -188,36 +188,23 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue';
+import { ref, computed, reactive, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useCustomerStore } from '~/stores/customers';
 
 const customerStore = useCustomerStore();
 
 // State variables
-const {
-  searchQuery,
-  filterVisitCount,
-  filterService,
-  currentPage,
-  pageSize,
-  showAddCustomerDialog,
-  showCustomerDrawer,
-  selectedCustomer,
-  addingCustomer,
-  customerFormRef
-} = $(defineProps({
-  searchQuery: { type: String, default: '' },
-  filterVisitCount: { type: String, default: '' },
-  filterService: { type: String, default: '' },
-  currentPage: { type: Number, default: 1 },
-  pageSize: { type: Number, default: 10 },
-  showAddCustomerDialog: { type: Boolean, default: false },
-  showCustomerDrawer: { type: Boolean, default: false },
-  selectedCustomer: { type: Object, default: null },
-  addingCustomer: { type: Boolean, default: false },
-  customerFormRef: { type: Object, default: null }
-}));
+const searchQuery = ref('');
+const filterVisitCount = ref('');
+const filterService = ref('');
+const currentPage = ref(1);
+const pageSize = ref(10);
+const showAddCustomerDialog = ref(false);
+const showCustomerDrawer = ref(false);
+const selectedCustomer = ref(null);
+const addingCustomer = ref(false);
+const customerFormRef = ref(null);
 
 // Recent visits for selected customer
 const recentVisits = ref([
