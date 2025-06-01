@@ -2,7 +2,7 @@
   <div>
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold">カウンセリングシート管理</h1>
-      <el-button type="primary" @click="createNewSheet">
+      <el-button type="primary" @click="showCreateSheetDialog = true">
         新規作成
       </el-button>
     </div>
@@ -140,22 +140,230 @@
         </span>
       </template>
     </el-dialog>
+    
+    <!-- カウンセリングシート作成ダイアログ -->
+    <el-dialog
+      v-model="showCreateSheetDialog"
+      title="カウンセリングシート作成"
+      width="70%"
+    >
+      <el-form
+        ref="createFormRef"
+        :model="createForm"
+        :rules="createRules"
+        label-position="top"
+      >
+        <!-- 顧客情報 -->
+        <div class="mb-6">
+          <h3 class="text-lg font-medium mb-4">顧客情報</h3>
+          <el-form-item label="顧客" prop="customer_id">
+            <el-select
+              v-model="createForm.customer_id"
+              filterable
+              remote
+              :remote-method="searchCustomers"
+              :loading="customersLoading"
+              placeholder="顧客を選択または検索"
+              class="w-full"
+            >
+              <el-option
+                v-for="customer in customers"
+                :key="customer.id"
+                :label="customer.name"
+                :value="customer.id"
+              >
+                <div>
+                  <div>{{ customer.name }}</div>
+                  <div class="text-xs text-gray-500">
+                    {{ customer.phone }} / {{ customer.email }}
+                  </div>
+                </div>
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </div>
+
+        <!-- 施術情報 -->
+        <div class="mb-6">
+          <h3 class="text-lg font-medium mb-4">施術希望</h3>
+          <el-form-item label="施術内容" prop="service_type">
+            <el-select v-model="createForm.service_type" class="w-full">
+              <el-option label="ジェルネイル" value="ジェルネイル" />
+              <el-option label="ネイルケア" value="ネイルケア" />
+              <el-option label="ネイルアート" value="ネイルアート" />
+              <el-option label="ハンドケア" value="ハンドケア" />
+            </el-select>
+          </el-form-item>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <el-form-item label="爪の長さ" prop="nail_length">
+              <el-select v-model="createForm.nail_length" class="w-full">
+                <el-option label="短め" value="short" />
+                <el-option label="普通" value="medium" />
+                <el-option label="長め" value="long" />
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="爪の形" prop="nail_shape">
+              <el-select v-model="createForm.nail_shape" class="w-full">
+                <el-option label="スクエア" value="square" />
+                <el-option label="ラウンド" value="round" />
+                <el-option label="オーバル" value="oval" />
+                <el-option label="アーモンド" value="almond" />
+                <el-option label="スティレット" value="stiletto" />
+                <el-option label="コフィン" value="coffin" />
+              </el-select>
+            </el-form-item>
+          </div>
+        </div>
+
+        <!-- 健康状態 -->
+        <div class="mb-6">
+          <h3 class="text-lg font-medium mb-4">健康状態</h3>
+          
+          <el-form-item label="アレルギー" prop="has_allergies">
+            <el-radio-group v-model="createForm.has_allergies">
+              <el-radio :label="true">あり</el-radio>
+              <el-radio :label="false">なし</el-radio>
+            </el-radio-group>
+          </el-form-item>
+
+          <el-form-item
+            v-if="createForm.has_allergies"
+            label="アレルギー詳細"
+            prop="allergies_details"
+          >
+            <el-input
+              v-model="createForm.allergies_details"
+              type="textarea"
+              rows="3"
+              placeholder="アレルギーの詳細を入力してください"
+            />
+          </el-form-item>
+
+          <el-form-item label="既往歴" prop="has_medical_conditions">
+            <el-radio-group v-model="createForm.has_medical_conditions">
+              <el-radio :label="true">あり</el-radio>
+              <el-radio :label="false">なし</el-radio>
+            </el-radio-group>
+          </el-form-item>
+
+          <el-form-item
+            v-if="createForm.has_medical_conditions"
+            label="既往歴詳細"
+            prop="medical_details"
+          >
+            <el-input
+              v-model="createForm.medical_details"
+              type="textarea"
+              rows="3"
+              placeholder="既往歴の詳細を入力してください"
+            />
+          </el-form-item>
+        </div>
+
+        <!-- 備考 -->
+        <div class="mb-6">
+          <h3 class="text-lg font-medium mb-4">その他</h3>
+          <el-form-item label="備考" prop="notes">
+            <el-input
+              v-model="createForm.notes"
+              type="textarea"
+              rows="3"
+              placeholder="特記事項があれば入力してください"
+            />
+          </el-form-item>
+        </div>
+      </el-form>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showCreateSheetDialog = false">キャンセル</el-button>
+          <el-button type="primary" @click="handleCreateSheet" :loading="creating">
+            作成
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { useCounselingStore } from '~/stores/counseling';
+import { useCustomerStore } from '~/stores/customers';
 
-const router = useRouter();
 const counselingStore = useCounselingStore();
+const customerStore = useCustomerStore();
+
 const activeTab = ref('new');
 const showSheetDrawer = ref(false);
 const showDeleteDialog = ref(false);
+const showCreateSheetDialog = ref(false);
 const selectedSheet = ref(null);
 const sheetToDelete = ref(null);
 const deletingSheet = ref(false);
+const creating = ref(false);
+const customersLoading = ref(false);
+const customers = ref([]);
+const createFormRef = ref(null);
+
+// Create form
+const createForm = reactive({
+  customer_id: '',
+  service_type: '',
+  nail_length: '',
+  nail_shape: '',
+  has_allergies: false,
+  allergies_details: '',
+  has_medical_conditions: false,
+  medical_details: '',
+  notes: ''
+});
+
+// Validation rules
+const createRules = {
+  customer_id: [
+    { required: true, message: '顧客を選択してください', trigger: 'change' }
+  ],
+  service_type: [
+    { required: true, message: '施術内容を選択してください', trigger: 'change' }
+  ],
+  nail_length: [
+    { required: true, message: '爪の長さを選択してください', trigger: 'change' }
+  ],
+  nail_shape: [
+    { required: true, message: '爪の形を選択してください', trigger: 'change' }
+  ],
+  allergies_details: [
+    { 
+      required: true, 
+      message: 'アレルギーの詳細を入力してください', 
+      trigger: 'blur',
+      validator: (rule, value, callback) => {
+        if (createForm.has_allergies && !value) {
+          callback(new Error('アレルギーの詳細を入力してください'));
+        } else {
+          callback();
+        }
+      }
+    }
+  ],
+  medical_details: [
+    {
+      required: true,
+      message: '既往歴の詳細を入力してください',
+      trigger: 'blur',
+      validator: (rule, value, callback) => {
+        if (createForm.has_medical_conditions && !value) {
+          callback(new Error('既往歴の詳細を入力してください'));
+        } else {
+          callback();
+        }
+      }
+    }
+  ]
+};
 
 // Computed properties
 const loading = computed(() => counselingStore.loading);
@@ -164,10 +372,6 @@ const newSheets = computed(() => counselingStore.newSheets);
 const processedSheets = computed(() => counselingStore.processedSheets);
 const archivedSheets = computed(() => counselingStore.archivedSheets);
 
-// メソッド
-const createNewSheet = () => {
-  navigateTo('/admin/counseling/create');
-};
 
 const handleTabChange = () => {
   loading.value = true;
@@ -281,6 +485,61 @@ const getNailShapeLabel = (shape) => {
     default:
       return shape;
   }
+};
+
+// Customer search
+const searchCustomers = async (query) => {
+  if (query) {
+    customersLoading.value = true;
+    try {
+      await customerStore.fetchCustomers();
+      customers.value = customerStore.customers;
+    } catch (error) {
+      ElMessage.error('顧客データの取得に失敗しました');
+    } finally {
+      customersLoading.value = false;
+    }
+  } else {
+    customers.value = [];
+  }
+};
+
+// Create sheet
+const handleCreateSheet = async () => {
+  if (!createFormRef.value) return;
+
+  await createFormRef.value.validate(async (valid) => {
+    if (valid) {
+      creating.value = true;
+      try {
+        await counselingStore.createSheet(createForm);
+        ElMessage.success('カウンセリングシートを作成しました');
+        showCreateSheetDialog.value = false;
+        resetCreateForm();
+      } catch (error) {
+        ElMessage.error('カウンセリングシートの作成に失敗しました');
+      } finally {
+        creating.value = false;
+      }
+    }
+  });
+};
+
+const resetCreateForm = () => {
+  if (createFormRef.value) {
+    createFormRef.value.resetFields();
+  }
+  Object.assign(createForm, {
+    customer_id: '',
+    service_type: '',
+    nail_length: '',
+    nail_shape: '',
+    has_allergies: false,
+    allergies_details: '',
+    has_medical_conditions: false,
+    medical_details: '',
+    notes: ''
+  });
 };
 
 // 初期データの読み込み
