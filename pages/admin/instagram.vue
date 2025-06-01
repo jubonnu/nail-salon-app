@@ -136,8 +136,17 @@ import { useInstagramStore } from '~/stores/instagram';
 const instagramStore = useInstagramStore();
 const showCreatePostDialog = ref(false);
 const editingPost = ref(false);
-const editingPostId = ref(null); 
+const editingPostId = ref(null);
 const fallbackImageUrl = 'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg';
+
+// Sample nail design images from Pexels
+const sampleImages = [
+  'https://images.pexels.com/photos/704815/pexels-photo-704815.jpeg',
+  'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg',
+  'https://images.pexels.com/photos/939836/pexels-photo-939836.jpeg',
+  'https://images.pexels.com/photos/1638340/pexels-photo-1638340.jpeg',
+  'https://images.pexels.com/photos/3997385/pexels-photo-3997385.jpeg'
+];
 
 const loading = computed(() => instagramStore.loading);
 const error = computed(() => instagramStore.error);
@@ -183,9 +192,9 @@ const loadPosts = async () => {
 
 const handleImageChange = (file) => {
   if (file.raw) {
-    // Use a sample image URL from Pexels for demonstration
-    // In production, you would upload the file to a storage service
-    postForm.image_url = 'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg';
+    // Select a random sample image
+    const randomIndex = Math.floor(Math.random() * sampleImages.length);
+    postForm.image_url = sampleImages[randomIndex];
   }
 };
 
