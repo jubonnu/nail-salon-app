@@ -27,23 +27,35 @@ export const useInstagramStore = defineStore('instagram', {
   state: () => ({
     posts: [],
     scheduledPosts: [],
+    allPosts: [],
     loading: false,
     error: null
   }),
+
+  getters: {
+    sortedPosts: (state) => {
+      return [...state.posts, ...state.scheduledPosts].sort((a, b) => {
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+    }
+  },
 
   actions: {
     async fetchPosts() {
       this.loading = true;
       try {
-        // Get non-scheduled posts
         const { data, error } = await supabase
           .from('instagram_posts')
           .select('*')
-          .neq('status', 'scheduled')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        this.posts = data || [];
+        
+        // Split posts into scheduled and non-scheduled
+        this.posts = (data || []).filter(post => post.status !== 'scheduled');
+        this.scheduledPosts = (data || []).filter(post => post.status === 'scheduled');
+        this.allPosts = data || [];
+        
         return this.posts;
       } catch (error) {
         this.error = error.message;
@@ -79,13 +91,12 @@ export const useInstagramStore = defineStore('instagram', {
     async createPost(data) {
       this.loading = true;
       try {
-        // Validate and prepare post data
         const postData = {
           image_url: data.image_url,
           caption: data.caption || '',
           hashtags: Array.isArray(data.hashtags) ? data.hashtags : [],
           scheduled_time: data.scheduled_time || null,
-          status: data.scheduled_time ? 'scheduled' : 'draft'
+          status: data.status || (data.scheduled_time ? 'scheduled' : 'draft')
         };
 
         const { data: post, error } = await supabase
@@ -97,6 +108,7 @@ export const useInstagramStore = defineStore('instagram', {
         if (error) throw error;
 
         // Update local state
+        this.allPosts.unshift(post);
         if (post.status === 'scheduled') {
           this.scheduledPosts.unshift(post);
         } else {
