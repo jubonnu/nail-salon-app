@@ -1,11 +1,27 @@
 import { defineStore } from 'pinia';
 import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+
+dayjs.extend(isSameOrAfter);
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
+
+const validatePost = (data) => {
+  if (!data.image_url) {
+    throw new Error('画像URLは必須です');
+  }
+  return {
+    image_url: data.image_url,
+    caption: data.caption || '',
+    hashtags: Array.isArray(data.hashtags) ? data.hashtags : [],
+    scheduled_time: data.scheduled_time || null,
+    status: data.scheduled_time ? 'scheduled' : 'draft'
+  };
+};
 
 export const useInstagramStore = defineStore('instagram', {
   state: () => ({
@@ -19,15 +35,16 @@ export const useInstagramStore = defineStore('instagram', {
     async fetchPosts() {
       this.loading = true;
       try {
+        // Get non-scheduled posts
         const { data, error } = await supabase
           .from('instagram_posts')
           .select('*')
-          .not('status', 'eq', 'scheduled')
+          .neq('status', 'scheduled')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
         this.posts = data || [];
-        return data;
+        return this.posts;
       } catch (error) {
         this.error = error.message;
         throw error;
@@ -39,16 +56,18 @@ export const useInstagramStore = defineStore('instagram', {
     async fetchScheduledPosts() {
       this.loading = true;
       try {
+        const now = dayjs();
+        // Get scheduled posts from today onwards
         const { data, error } = await supabase
           .from('instagram_posts')
           .select('*')
-          .match({ status: 'scheduled' })
-          .gte('scheduled_time', dayjs().startOf('day').toISOString())
+          .eq('status', 'scheduled')
+          .gte('scheduled_time', now.startOf('day').toISOString())
           .order('scheduled_time');
 
         if (error) throw error;
         this.scheduledPosts = data || [];
-        return data;
+        return this.scheduledPosts;
       } catch (error) {
         this.error = error.message;
         throw error;
@@ -60,19 +79,7 @@ export const useInstagramStore = defineStore('instagram', {
     async createPost(data) {
       this.loading = true;
       try {
-        // Ensure required fields
-        if (!data.image_url) {
-          throw new Error('画像URLは必須です');
-        }
-
-        // Format data
-        const postData = {
-          image_url: data.image_url,
-          caption: data.caption || '',
-          hashtags: data.hashtags || [],
-          scheduled_time: data.scheduled_time,
-          status: data.scheduled_time ? 'scheduled' : 'draft'
-        };
+        const postData = validatePost(data);
 
         const { data: post, error } = await supabase
           .from('instagram_posts')
@@ -83,7 +90,7 @@ export const useInstagramStore = defineStore('instagram', {
         if (error) throw error;
 
         // Add to appropriate list
-        if (postData.status === 'scheduled') {
+        if (post.status === 'scheduled') {
           this.scheduledPosts.unshift(post);
         } else {
           this.posts.unshift(post);
@@ -101,11 +108,7 @@ export const useInstagramStore = defineStore('instagram', {
     async updatePost(id, data) {
       this.loading = true;
       try {
-        // Format update data
-        const updateData = {
-          ...data,
-          status: data.scheduled_time ? 'scheduled' : (data.status || 'draft')
-        };
+        const updateData = validatePost(data);
 
         const { data: updated, error } = await supabase
           .from('instagram_posts')
@@ -116,11 +119,8 @@ export const useInstagramStore = defineStore('instagram', {
 
         if (error) throw error;
 
-        // Refresh both lists to ensure correct state
-        await Promise.all([
-          this.fetchPosts(),
-          this.fetchScheduledPosts()
-        ]);
+        // Update local state
+        await this.refreshPosts();
 
         return updated;
       } catch (error) {
@@ -142,16 +142,20 @@ export const useInstagramStore = defineStore('instagram', {
         if (error) throw error;
         
         // Refresh both lists to ensure correct state
-        await Promise.all([
-          this.fetchPosts(),
-          this.fetchScheduledPosts()
-        ]);
+        await this.refreshPosts();
       } catch (error) {
         this.error = error.message;
         throw error;
       } finally {
         this.loading = false;
       }
+    },
+
+    async refreshPosts() {
+      await Promise.all([
+        this.fetchPosts(),
+        this.fetchScheduledPosts()
+      ]);
     }
   }
 });
