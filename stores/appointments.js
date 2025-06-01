@@ -47,7 +47,6 @@ export const useAppointmentStore = defineStore('appointments', {
     async createAppointment(data) {
       this.loading = true;
       try {
-        // Create appointment
         const { data: newAppointment, error } = await supabase
           .from('appointments')
           .insert([data])
@@ -72,14 +71,17 @@ export const useAppointmentStore = defineStore('appointments', {
           appointment_id: newAppointment.id,
           customer_id: newAppointment.customer_id,
           staff_id: newAppointment.staff_id,
-          amount: this.getServiceAmount(newAppointment.service_type),
-          payment_method: 'Cash', // デフォルト値
-          status: 'Pending'
+          amount: this.getServiceAmount(newAppointment.service_type), // 施術タイプに応じた金額
+          payment_method: 'Cash', // デフォルトの支払方法
+          status: 'Pending', // 初期ステータス
+          notes: `予約ID: ${newAppointment.id} の売上記録`
         };
 
         const { error: salesError } = await supabase
           .from('sales_records')
-          .insert([salesData]);
+          .insert([salesData])
+          .select()
+          .single();
 
         if (salesError) throw salesError;
 
@@ -96,10 +98,10 @@ export const useAppointmentStore = defineStore('appointments', {
     getServiceAmount(serviceType) {
       // サービスタイプに応じた金額を返す
       const prices = {
-        'ジェルネイル': 8000,
-        'ネイルケア': 5000,
-        'ネイルアート': 10000,
-        'ハンドケア': 3000
+        'ジェルネイル': 8000, // 基本料金
+        'ネイルケア': 5000,   // 基本料金
+        'ネイルアート': 10000, // アート込み
+        'ハンドケア': 3000    // 基本料金
       };
       return prices[serviceType] || 0;
     },
