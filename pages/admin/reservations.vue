@@ -468,7 +468,7 @@ onMounted(async () => {
 
 <style scoped>
 .calendar-grid {
-  min-height: 500px;
+  min-height: 600px;
 }
 
 /* カレンダーセルのスタイリング */
@@ -479,7 +479,6 @@ onMounted(async () => {
 
 /* カレンダーセルの高さと余白の調整 */
 .calendar-grid .grid-cols-7 > div {
-  min-height: 100px;
   max-height: 120px;
   overflow-y: auto;
   padding: 8px;
