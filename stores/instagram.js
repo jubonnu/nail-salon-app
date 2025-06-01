@@ -11,13 +11,22 @@ const supabase = createClient(
 );
 
 const validatePost = (data) => {
-  if (!data.image_url) {
+  const imageUrl = data.image_url?.trim();
+  
+  if (!imageUrl) {
     throw new Error('画像URLは必須です');
   }
+
+  // Validate image URL format according to database constraint
+  const validImageUrlPattern = /^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i;
+  if (!validImageUrlPattern.test(imageUrl)) {
+    throw new Error('画像URLは有効な画像URLである必要があります (http(s)で始まり、.jpg、.jpeg、.png、.gif、.webpで終わる必要があります)');
+  }
+
   return {
-    image_url: data.image_url,
-    caption: data.caption || '',
-    hashtags: Array.isArray(data.hashtags) ? data.hashtags : [],
+    image_url: imageUrl,
+    caption: data.caption?.trim() || '',
+    hashtags: Array.isArray(data.hashtags) ? data.hashtags.filter(tag => tag?.trim()) : [],
     scheduled_time: data.scheduled_time || null,
     status: data.scheduled_time ? 'scheduled' : 'draft'
   };
