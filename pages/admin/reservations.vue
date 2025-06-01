@@ -202,6 +202,10 @@
 import { ref, reactive, computed } from 'vue';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ja';
+import { useAppointmentStore } from '~/stores/appointments';
+import { useCustomerStore } from '~/stores/customers';
+import { useStaffStore } from '~/stores/staff';
+import { onMounted } from 'vue';
 
 dayjs.locale('ja');
 
@@ -213,10 +217,10 @@ const showReservationDrawer = ref(false);
 const showDeleteDialog = ref(false);
 const editingReservation = ref(false);
 const selectedReservation = ref(null);
-const formRef = ref(null);
 const appointmentStore = useAppointmentStore();
 const customerStore = useCustomerStore();
 const staffStore = useStaffStore();
+const formRef = ref(null);
 
 // Form model
 const reservationForm = reactive({
@@ -363,14 +367,15 @@ const confirmDeleteReservation = () => {
   showDeleteDialog.value = true;
 };
 
-const deleteReservation = () => {
+const deleteReservation = async () => {
   try {
     await appointmentStore.deleteAppointment(selectedReservation.value.id);
     ElMessage.success('予約をキャンセルしました');
+    showDeleteDialog.value = false;
+    showReservationDrawer.value = false;
   } catch (error) {
     ElMessage.error('予約のキャンセルに失敗しました');
   }
-  showReservationDrawer.value = false;
 };
 
 const resetForm = () => {
@@ -392,6 +397,14 @@ const resetForm = () => {
 const formatDateTime = (datetime) => {
   return dayjs(datetime).format('YYYY年M月D日 HH:mm');
 };
+
+// Computed properties for filtered appointments
+const filteredAppointments = computed(() => {
+  return appointments.value.filter(appointment => {
+    // Add any filtering logic here
+    return true;
+  });
+});
 
 // Load initial data
 onMounted(async () => {
