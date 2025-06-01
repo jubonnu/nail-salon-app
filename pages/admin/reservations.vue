@@ -221,8 +221,6 @@ const formRef = ref(null);
 const appointmentStore = useAppointmentStore();
 const customerStore = useCustomerStore();
 const staffStore = useStaffStore();
-const customers = ref([]);
-const staffMembers = ref([]);
 const customersLoading = ref(false);
 const staffLoading = ref(false);
 
@@ -254,8 +252,6 @@ const rules = {
 
 const appointments = computed(() => appointmentStore.appointments);
 const loading = computed(() => appointmentStore.loading);
-const customers = ref([]);
-const staffMembers = ref([]);
 
 // Computed
 const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
@@ -277,13 +273,6 @@ const calendarDates = computed(() => {
   
   return dates;
 });
-
-// Get appointments for a specific date
-const getReservationsForDate = (date) => {
-  return appointments.value.filter(appointment => 
-    dayjs(appointment.start_time).isSame(date, 'day')
-  );
-};
 
 // Methods
 const changeView = (view) => {
@@ -310,18 +299,19 @@ const isSameMonth = (date) => {
   return dayjs(date).isSame(currentDate.value, 'month');
 };
 
-const getReservationsForDate = (date) => {
-  return reservations.value.filter(reservation => 
-    dayjs(reservation.datetime).isSame(date, 'day')
+const getReservationsForDate = computed(() => (date) => {
+  return appointments.value.filter(appointment => 
+    dayjs(appointment.start_time).isSame(date, 'day')
   );
+});
 };
 
 const getReservationClass = (reservation) => {
   return {
-    'bg-primary text-white': reservation.service === 'ジェルネイル',
-    'bg-secondary text-white': reservation.service === 'ネイルケア',
-    'bg-accent text-white': reservation.service === 'ネイルアート',
-    'bg-success text-white': reservation.service === 'ハンドケア'
+    'bg-primary text-white': reservation.service_type === 'ジェルネイル',
+    'bg-secondary text-white': reservation.service_type === 'ネイルケア',
+    'bg-accent text-white': reservation.service_type === 'ネイルアート',
+    'bg-success text-white': reservation.service_type === 'ハンドケア'
   };
 };
 
@@ -335,6 +325,9 @@ const createReservation = (date) => {
 
 const viewReservation = (reservation) => {
   selectedReservation.value = reservation;
+  selectedReservation.value.customerName = reservation.customers?.name;
+  selectedReservation.value.service = reservation.service_type;
+  selectedReservation.value.staff = reservation.staff?.name;
   showReservationDrawer.value = true;
 };
 
@@ -411,10 +404,7 @@ const formatDateTime = (datetime) => {
 
 // Computed properties for filtered appointments
 const filteredAppointments = computed(() => {
-  return appointments.value.filter(appointment => {
-    // Add any filtering logic here
-    return true;
-  });
+  return appointments.value;
 });
 
 // Load initial data
