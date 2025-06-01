@@ -37,65 +37,88 @@ export const useSalesStore = defineStore('sales', {
     async fetchSummary(period = 'day', date = new Date()) {
       this.loading = true;
       try {
-        const startDate = dayjs(date).startOf(period);
-        const endDate = dayjs(date).endOf(period);
-        const prevStartDate = startDate.subtract(1, period);
-        const prevEndDate = endDate.subtract(1, period);
+        // Calculate current period dates
+        const currentPeriod = {
+          start: dayjs(date).startOf(period),
+          end: dayjs(date).endOf(period)
+        };
+
+        // Calculate previous period dates
+        const previousPeriod = {
+          start: currentPeriod.start.subtract(1, period),
+          end: currentPeriod.end.subtract(1, period)
+        };
 
         // Get sales records for the period
         const { data: salesData, error: salesError } = await supabase
           .from('sales_records')
           .select(`
             *,
-            customers!inner (
+            customers (
               name,
               email,
               phone
             ),
-            staff!inner (
+            staff (
               name,
               email
             ),
-            appointments!left (
+            appointments (
               service_type
             )
           `)
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString())
+          .gte('created_at', currentPeriod.start.toISOString())
+          .lte('created_at', currentPeriod.end.toISOString())
           .order('created_at', { ascending: false });
 
         if (salesError) throw salesError;
 
+        // Get previous period sales data
         const { data: prevSalesData } = await supabase
           .from('sales_records')
-          .select(`
-            amount,
-            customer_id,
-            created_at
-          `)
-          .gte('created_at', prevStartDate.toISOString())
-          .lte('created_at', prevEndDate.toISOString());
+          .select('*')
+          .gte('created_at', previousPeriod.start.toISOString())
+          .lte('created_at', previousPeriod.end.toISOString());
+
+        // Filter out null or invalid records
+        const validSalesData = salesData?.filter(record => record.amount && record.customer_id) || [];
+        const validPrevSalesData = prevSalesData?.filter(record => record.amount && record.customer_id) || [];
 
         // Calculate metrics
-        const totalSales = salesData?.reduce((sum, record) => sum + record.amount, 0) || 0;
-        const prevTotalSales = prevSalesData?.reduce((sum, record) => sum + record.amount, 0) || 0;
+        const totalSales = validSalesData.reduce((sum, record) => sum + record.amount, 0);
+        const prevTotalSales = validPrevSalesData.reduce((sum, record) => sum + record.amount, 0);
         const salesTrend = prevTotalSales ? Math.round((totalSales - prevTotalSales) / prevTotalSales * 100) : 0;
 
-        const uniqueCustomers = new Set(salesData?.map(record => record.customer_id));
+        // Calculate unique customers
+        const uniqueCustomers = new Set(validSalesData.map(record => record.customer_id));
         const customerCount = uniqueCustomers.size;
-        const prevUniqueCustomers = new Set(prevSalesData?.map(record => record.customer_id));
+        const prevUniqueCustomers = new Set(validPrevSalesData.map(record => record.customer_id));
         const prevCustomerCount = prevUniqueCustomers.size;
         const customerTrend = prevCustomerCount ? Math.round((customerCount - prevCustomerCount) / prevCustomerCount * 100) : 0;
 
+        // Calculate average transaction value
         const averageTransaction = customerCount ? Math.round(totalSales / customerCount) : 0;
         const prevAverageTransaction = prevCustomerCount ? Math.round(prevTotalSales / prevCustomerCount) : 0;
         const avgTransactionTrend = prevAverageTransaction ? Math.round((averageTransaction - prevAverageTransaction) / prevAverageTransaction * 100) : 0;
 
-        // Calculate new customers (not present in previous period)
-        const newCustomers = Array.from(uniqueCustomers).filter(id => !prevUniqueCustomers.has(id)).length;
-        const prevNewCustomers = Array.from(prevUniqueCustomers).filter(id => 
-          !salesData?.some(record => record.customer_id === id)
-        ).length;
+        // Get all customer IDs from previous periods
+        const { data: allPreviousCustomers } = await supabase
+          .from('sales_records')
+          .select('customer_id')
+          .lt('created_at', currentPeriod.start.toISOString())
+          .order('created_at', { ascending: false });
+
+        const previousCustomerIds = new Set(allPreviousCustomers?.map(record => record.customer_id));
+        
+        // Calculate new customers (customers who made their first purchase in this period)
+        const newCustomers = Array.from(uniqueCustomers)
+          .filter(id => !previousCustomerIds.has(id))
+          .length;
+
+        const prevNewCustomers = Array.from(prevUniqueCustomers)
+          .filter(id => !previousCustomerIds.has(id))
+          .length;
+
         const newCustomerTrend = prevNewCustomers ? Math.round((newCustomers - prevNewCustomers) / prevNewCustomers * 100) : 0;
 
         this.summary = {
@@ -112,8 +135,8 @@ export const useSalesStore = defineStore('sales', {
           newCustomerTrend,
           newCustomerTargetProgress: 70
         };
-
-        this.records = salesData || [];
+        
+        this.records = validSalesData;
         return { summary: this.summary, records: this.records };
       } catch (error) {
         this.error = error.message;
