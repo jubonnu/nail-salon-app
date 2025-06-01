@@ -22,7 +22,7 @@
             :src="post.image_url" 
             :alt="post.caption || 'Nail design'" 
             class="w-full h-full object-cover"
-            @error="handleImageError(post)"
+            @error="handleImageError"
           />
           <div class="absolute top-2 right-2">
             <el-tag v-if="post.status === 'scheduled'" type="warning">予約済み</el-tag>
@@ -137,7 +137,7 @@ const instagramStore = useInstagramStore();
 const showCreatePostDialog = ref(false);
 const editingPost = ref(false);
 const editingPostId = ref(null);
-const fallbackImageUrl = 'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg';
+const fallbackImageUrl = 'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2.jpg';
 
 const loading = computed(() => instagramStore.loading);
 const error = computed(() => instagramStore.error);
@@ -165,9 +165,9 @@ const commonHashtags = [
   '#ネイルスタイル'
 ];
 
-const handleImageError = async (post) => {
-  if (post.image_url === fallbackImageUrl) return;
-  await instagramStore.updatePost(post.id, { ...post, image_url: fallbackImageUrl });
+const handleImageError = (event) => {
+  // Only update the display source, don't persist to database
+  event.target.src = fallbackImageUrl;
 };
 
 const loadPosts = async () => {
