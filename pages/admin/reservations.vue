@@ -217,10 +217,14 @@ const showReservationDrawer = ref(false);
 const showDeleteDialog = ref(false);
 const editingReservation = ref(false);
 const selectedReservation = ref(null);
+const formRef = ref(null);
 const appointmentStore = useAppointmentStore();
 const customerStore = useCustomerStore();
 const staffStore = useStaffStore();
-const formRef = ref(null);
+const customers = ref([]);
+const staffMembers = ref([]);
+const customersLoading = ref(false);
+const staffLoading = ref(false);
 
 // Form model
 const reservationForm = reactive({
@@ -274,6 +278,13 @@ const calendarDates = computed(() => {
   return dates;
 });
 
+// Get appointments for a specific date
+const getReservationsForDate = (date) => {
+  return appointments.value.filter(appointment => 
+    dayjs(appointment.start_time).isSame(date, 'day')
+  );
+};
+
 // Methods
 const changeView = (view) => {
   currentView.value = view;
@@ -316,9 +327,9 @@ const getReservationClass = (reservation) => {
 
 const createReservation = (date) => {
   editingReservation.value = false;
-  reservationForm.start_time = date;
+  reservationForm.start_time = dayjs(date).format('YYYY-MM-DD HH:mm:ss');
   // 1時間後をデフォルトの終了時間に設定
-  reservationForm.end_time = new Date(date.getTime() + 60 * 60 * 1000);
+  reservationForm.end_time = dayjs(date).add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
   showCreateReservationDialog.value = true;
 };
 
@@ -409,12 +420,14 @@ const filteredAppointments = computed(() => {
 // Load initial data
 onMounted(async () => {
   try {
+    // Load all required data
     await Promise.all([
       appointmentStore.fetchAppointments(),
       customerStore.fetchCustomers(),
       staffStore.fetchStaff()
     ]);
     
+    // Set local data
     customers.value = customerStore.customers;
     staffMembers.value = staffStore.staff;
   } catch (error) {
