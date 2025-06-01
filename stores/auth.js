@@ -53,10 +53,10 @@ export const useAuthStore = defineStore('auth', {
 
         if (profileError) throw profileError;
 
-        return true;
+        return { success: true };
       } catch (error) {
         this.error = error.message || 'Registration failed';
-        throw error;
+        return { success: false, error: this.error };
       } finally {
         this.loading = false;
       }
@@ -71,7 +71,10 @@ export const useAuthStore = defineStore('auth', {
           password
         });
 
-        if (error) throw error;
+        if (error) {
+          this.error = error.message;
+          return { success: false, error: error.message };
+        }
 
         // Get user profile
         let { data: profile } = await supabase
@@ -91,7 +94,10 @@ export const useAuthStore = defineStore('auth', {
             ])
             .select();
 
-          if (profileError) throw profileError;
+          if (profileError) {
+            this.error = profileError.message;
+            return { success: false, error: profileError.message };
+          }
           profile = newProfile;
         }
 
@@ -106,10 +112,10 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('token', this.token);
         localStorage.setItem('rememberMe', this.rememberMe);
 
-        return true;
+        return { success: true };
       } catch (error) {
         this.error = error.message || 'Authentication failed';
-        return false;
+        return { success: false, error: this.error };
       } finally {
         this.loading = false;
       }

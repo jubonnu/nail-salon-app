@@ -108,15 +108,25 @@ const handleLogin = async () => {
     loading.value = true;
     
     authStore.rememberMe = rememberMe.value;
-    const success = await authStore.login(form.email, form.password);
+    const { success, error } = await authStore.login(form.email, form.password);
+    
     if (success) {
       ElMessage.success('ログインしました');
-      await navigateTo('/admin/dashboard')
+      await navigateTo('/admin/dashboard');
+    } else {
+      // Handle specific error cases
+      if (error?.includes('Invalid login credentials')) {
+        ElMessage.error('メールアドレスまたはパスワードが正しくありません');
+      } else if (error?.includes('Email not confirmed')) {
+        ElMessage.error('メールアドレスの確認が完了していません。メールをご確認ください');
+      } else {
+        ElMessage.error(error || 'ログインに失敗しました。もう一度お試しください');
+      }
     }
   } catch (error) {
-    ElMessage.error('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
+    ElMessage.error('入力内容を確認してください');
   } finally {
     loading.value = false;
   }
-}
+};
 </script>
