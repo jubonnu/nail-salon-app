@@ -1,4 +1,11 @@
 import { defineStore } from 'pinia';
+import { createClient } from '@supabase/supabase-js';
+import dayjs from 'dayjs';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 export const useInstagramStore = defineStore('instagram', {
   state: () => ({
@@ -12,9 +19,14 @@ export const useInstagramStore = defineStore('instagram', {
     async fetchPosts() {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        const data = await $api.instagram.getPosts();
-        this.posts = data;
+        const { data, error } = await supabase
+          .from('instagram_posts')
+          .select('*')
+          .not('status', 'eq', 'scheduled')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        this.posts = data || [];
         return data;
       } catch (error) {
         this.error = error.message;
@@ -27,9 +39,15 @@ export const useInstagramStore = defineStore('instagram', {
     async fetchScheduledPosts() {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        const data = await $api.instagram.getScheduledPosts();
-        this.scheduledPosts = data;
+        const { data, error } = await supabase
+          .from('instagram_posts')
+          .select('*')
+          .match({ status: 'scheduled' })
+          .gte('scheduled_time', dayjs().startOf('day').toISOString())
+          .order('scheduled_time');
+
+        if (error) throw error;
+        this.scheduledPosts = data || [];
         return data;
       } catch (error) {
         this.error = error.message;
@@ -42,13 +60,35 @@ export const useInstagramStore = defineStore('instagram', {
     async createPost(data) {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        const post = await $api.instagram.createPost(data);
-        if (post.status === 'scheduled') {
+        // Ensure required fields
+        if (!data.image_url) {
+          throw new Error('画像URLは必須です');
+        }
+
+        // Format data
+        const postData = {
+          image_url: data.image_url,
+          caption: data.caption || '',
+          hashtags: data.hashtags || [],
+          scheduled_time: data.scheduled_time,
+          status: data.scheduled_time ? 'scheduled' : 'draft'
+        };
+
+        const { data: post, error } = await supabase
+          .from('instagram_posts')
+          .insert([postData])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Add to appropriate list
+        if (postData.status === 'scheduled') {
           this.scheduledPosts.unshift(post);
         } else {
           this.posts.unshift(post);
         }
+
         return post;
       } catch (error) {
         this.error = error.message;
@@ -61,24 +101,27 @@ export const useInstagramStore = defineStore('instagram', {
     async updatePost(id, data) {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        const updated = await $api.instagram.updatePost(id, data);
-        
-        // Update in appropriate list based on status
-        if (updated.status === 'scheduled') {
-          const index = this.posts.findIndex(p => p.id === id);
-          if (index !== -1) {
-            this.posts.splice(index, 1);
-          }
-          this.scheduledPosts.unshift(updated);
-        } else {
-          const index = this.scheduledPosts.findIndex(p => p.id === id);
-          if (index !== -1) {
-            this.scheduledPosts.splice(index, 1);
-          }
-          this.posts.unshift(updated);
-        }
-        
+        // Format update data
+        const updateData = {
+          ...data,
+          status: data.scheduled_time ? 'scheduled' : (data.status || 'draft')
+        };
+
+        const { data: updated, error } = await supabase
+          .from('instagram_posts')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Refresh both lists to ensure correct state
+        await Promise.all([
+          this.fetchPosts(),
+          this.fetchScheduledPosts()
+        ]);
+
         return updated;
       } catch (error) {
         this.error = error.message;
@@ -91,19 +134,18 @@ export const useInstagramStore = defineStore('instagram', {
     async deletePost(id) {
       this.loading = true;
       try {
-        const { $api } = useNuxtApp();
-        await $api.instagram.deletePost(id);
+        const { error } = await supabase
+          .from('instagram_posts')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
         
-        // Remove from both lists
-        const postsIndex = this.posts.findIndex(p => p.id === id);
-        if (postsIndex !== -1) {
-          this.posts.splice(postsIndex, 1);
-        }
-        
-        const scheduledIndex = this.scheduledPosts.findIndex(p => p.id === id);
-        if (scheduledIndex !== -1) {
-          this.scheduledPosts.splice(scheduledIndex, 1);
-        }
+        // Refresh both lists to ensure correct state
+        await Promise.all([
+          this.fetchPosts(),
+          this.fetchScheduledPosts()
+        ]);
       } catch (error) {
         this.error = error.message;
         throw error;
