@@ -39,7 +39,7 @@
             </div>
             <div class="flex items-center">
               <span class="text-gray-500 w-24">勤務開始:</span>
-              <span>{{ formatDate(staff.startDate) }}</span>
+              <span>{{ formatDate(staff.start_date) }}</span>
             </div>
           </div>
 
@@ -99,9 +99,9 @@
           <el-input v-model="staffForm.phone" />
         </el-form-item>
 
-        <el-form-item label="勤務開始日" prop="startDate">
+        <el-form-item label="勤務開始日" prop="start_date">
           <el-date-picker
-            v-model="staffForm.startDate"
+            v-model="staffForm.start_date"
             type="date"
             placeholder="日付を選択"
             class="w-full"
@@ -219,14 +219,19 @@ const loadStaff = async () => {
 
 // Methods
 const formatDate = (date) => {
-  return dayjs(date).format('YYYY年M月D日');
+  if (!date) return '日付なし';
+  const parsedDate = dayjs(date);
+  return parsedDate.isValid() ? parsedDate.format('YYYY年M月D日') : '日付なし';
 };
 
 const editStaff = (staff) => {
   editingStaff.value = true;
+  const startDate = staff.start_date ? dayjs(staff.start_date).isValid() ? 
+    dayjs(staff.start_date).toDate() : null : null;
+    
   Object.assign(staffForm, {
     ...staff,
-    start_date: dayjs(staff.start_date).toDate()
+    start_date: startDate
   });
   showStaffDialog.value = true;
 };
@@ -243,13 +248,16 @@ const saveStaff = async () => {
   await staffFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
+        const startDate = staffForm.start_date && dayjs(staffForm.start_date).isValid() ? 
+          dayjs(staffForm.start_date).format('YYYY-MM-DD') : null;
+
         const staffData = {
           name: staffForm.name,
           email: staffForm.email,
           phone: staffForm.phone,
           role: staffForm.role,
           skills: staffForm.skills,
-          start_date: dayjs(staffForm.start_date).format('YYYY-MM-DD'),
+          start_date: startDate,
           notes: staffForm.notes
         };
 
