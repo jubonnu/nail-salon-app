@@ -304,7 +304,6 @@ const getReservationsForDate = computed(() => (date) => {
     dayjs(appointment.start_time).isSame(date, 'day')
   );
 });
-};
 
 const getReservationClass = (reservation) => {
   return {
@@ -314,6 +313,10 @@ const getReservationClass = (reservation) => {
     'bg-success text-white': reservation.service_type === 'ハンドケア'
   };
 };
+
+// State for customers and staff
+const customers = ref([]);
+const staffMembers = ref([]);
 
 const createReservation = (date) => {
   editingReservation.value = false;
