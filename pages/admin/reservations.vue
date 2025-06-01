@@ -68,11 +68,12 @@
               <div
                 v-for="reservation in getReservationsForDate(date)"
                 :key="reservation.id"
-                class="text-xs p-1 rounded cursor-pointer"
+                class="text-xs py-2 px-3 rounded cursor-pointer mb-1 shadow-sm"
                 :class="getReservationClass(reservation)"
                 @click="viewReservation(reservation)"
               >
-                {{ reservation.time }} {{ reservation.customerName }}
+                <div class="font-medium">{{ dayjs(reservation.start_time).format('HH:mm') }}</div>
+                <div class="truncate">{{ reservation.customers?.name }}</div>
               </div>
             </div>
           </div>
@@ -469,5 +470,36 @@ onMounted(async () => {
 <style scoped>
 .calendar-grid {
   min-height: 600px;
+}
+
+.calendar-grid :deep(.el-button--small) {
+  padding: 4px;
+  min-height: 24px;
+}
+
+/* カレンダーセルの高さを固定 */
+.calendar-grid .grid-cols-7 > div {
+  min-height: 120px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+/* スクロールバーのスタイリング */
+.calendar-grid .grid-cols-7 > div::-webkit-scrollbar {
+  width: 4px;
+}
+
+.calendar-grid .grid-cols-7 > div::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.calendar-grid .grid-cols-7 > div::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 2px;
+}
+
+.calendar-grid .grid-cols-7 > div::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 </style>
