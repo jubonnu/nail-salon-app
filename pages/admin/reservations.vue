@@ -468,19 +468,19 @@ onMounted(async () => {
 
 <style scoped>
 .calendar-grid {
-  min-height: 600px;
+  min-height: 500px;
 }
 
 /* カレンダーセルのスタイリング */
 .calendar-grid :deep(.el-button--small) {
   padding: 4px;
-  min-height: 24px;
+  min-height: 20px;
 }
 
 /* カレンダーセルの高さと余白の調整 */
 .calendar-grid .grid-cols-7 > div {
-  min-height: 120px;
-  max-height: 160px;
+  min-height: 100px;
+  max-height: 120px;
   overflow-y: auto;
   padding: 8px;
 }
