@@ -28,12 +28,14 @@ export const useInstagramStore = defineStore('instagram', {
     posts: [],
     scheduledPosts: [],
     loading: false,
-    error: null
+    error: null,
+    lastFetch: null
   }),
 
   getters: {
     sortedPosts: (state) => {
-      return [...state.posts, ...state.scheduledPosts].sort((a, b) => {
+      const allPosts = [...state.posts, ...state.scheduledPosts];
+      return allPosts.filter(post => post && post.image_url).sort((a, b) => {
         return new Date(b.created_at) - new Date(a.created_at);
       });
     }
@@ -43,14 +45,20 @@ export const useInstagramStore = defineStore('instagram', {
     async fetchPosts() {
       this.loading = true;
       try {
+        // Prevent duplicate fetches within 30 seconds
+        if (this.lastFetch && (Date.now() - this.lastFetch) < 30000) {
+          return;
+        }
+
         const { data: allPosts, error } = await supabase
           .from('instagram_posts')
           .select('*')
-          .neq('status', 'scheduled')
+          .eq('status', 'draft')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
         this.posts = allPosts || [];
+        this.lastFetch = Date.now();
         return this.posts;
       } catch (error) {
         this.error = error.message;
@@ -63,6 +71,11 @@ export const useInstagramStore = defineStore('instagram', {
     async fetchScheduledPosts() {
       this.loading = true;
       try {
+        // Prevent duplicate fetches within 30 seconds
+        if (this.lastFetch && (Date.now() - this.lastFetch) < 30000) {
+          return;
+        }
+
         const now = dayjs();
         // Get scheduled posts from today onwards
         const { data, error } = await supabase
@@ -74,6 +87,7 @@ export const useInstagramStore = defineStore('instagram', {
 
         if (error) throw error;
         this.scheduledPosts = data || [];
+        this.lastFetch = Date.now();
         return this.scheduledPosts;
       } catch (error) {
         this.error = error.message;
