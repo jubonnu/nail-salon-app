@@ -166,7 +166,7 @@ const archivedSheets = computed(() => counselingStore.archivedSheets);
 
 // メソッド
 const createNewSheet = () => {
-  router.push('/admin/counseling/create');
+  navigateTo('/admin/counseling/create');
 };
 
 const handleTabChange = () => {
