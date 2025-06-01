@@ -26,15 +26,15 @@ const validatePost = (data) => {
 export const useInstagramStore = defineStore('instagram', {
   state: () => ({
     posts: [],
-    scheduledPosts: [],
-    allPosts: [],
+    scheduledPosts: [], 
     loading: false,
     error: null
   }),
 
   getters: {
     sortedPosts: (state) => {
-      return [...state.posts, ...state.scheduledPosts].sort((a, b) => {
+      const allPosts = [...state.posts, ...state.scheduledPosts];
+      return allPosts.sort((a, b) => {
         return new Date(b.created_at) - new Date(a.created_at);
       });
     }
@@ -44,17 +44,17 @@ export const useInstagramStore = defineStore('instagram', {
     async fetchPosts() {
       this.loading = true;
       try {
-        const { data, error } = await supabase
+        // Get all posts
+        const { data: allPosts, error } = await supabase
           .from('instagram_posts')
           .select('*')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
         
-        // Split posts into scheduled and non-scheduled
-        this.posts = (data || []).filter(post => post.status !== 'scheduled');
-        this.scheduledPosts = (data || []).filter(post => post.status === 'scheduled');
-        this.allPosts = data || [];
+        // Update state
+        this.posts = allPosts?.filter(post => post.status !== 'scheduled') || [];
+        this.scheduledPosts = allPosts?.filter(post => post.status === 'scheduled') || [];
         
         return this.posts;
       } catch (error) {
