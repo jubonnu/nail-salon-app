@@ -137,7 +137,7 @@ const instagramStore = useInstagramStore();
 const showCreatePostDialog = ref(false);
 const editingPost = ref(false);
 const editingPostId = ref(null);
-const fallbackImageUrl = 'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg';
+const fallbackImageUrl = 'https://images.pexels.com/photos/3997391/pexels-photo-3997391.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2.jpg';
 
 const loading = computed(() => instagramStore.loading);
 const error = computed(() => instagramStore.error);
