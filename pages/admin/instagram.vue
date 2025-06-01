@@ -14,15 +14,20 @@
     <div 
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       v-loading="loading"
-      v-if="sortedPosts.length > 0"
+      v-if="sortedPosts && sortedPosts.length > 0"
     >
-      <div v-for="post in sortedPosts" :key="post.id" class="bg-white rounded-lg shadow overflow-hidden">
+      <div 
+        v-for="post in sortedPosts" 
+        :key="post.id" 
+        class="bg-white rounded-lg shadow overflow-hidden"
+        v-if="post && post.image_url"
+      >
         <div class="relative aspect-square">
           <img 
             :src="post.image_url" 
             :alt="post.caption || 'Nail design'" 
             class="w-full h-full object-cover"
-            @error="handleImageError(post)"
+            @error="(e) => handleImageError(e, post)"
           />
           <div class="absolute top-2 right-2">
             <el-tag v-if="post.status === 'scheduled'" type="warning">予約済み</el-tag>
@@ -165,11 +170,11 @@ const commonHashtags = [
   '#ネイルスタイル'
 ];
 
-const handleImageError = async (post) => {
+const handleImageError = async (event, post) => {
   // Update post with fallback image
-  if (post.image_url === fallbackImageUrl) return;
+  if (event.target.src === fallbackImageUrl) return;
   
-  instagramStore.updatePost(post.id, { ...post, image_url: fallbackImageUrl });
+  event.target.src = fallbackImageUrl;
 };
 
 const loadPosts = async () => {
